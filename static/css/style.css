@@ -1,0 +1,64 @@
+:root{
+    --primary:#2563EB;
+    --secondary:#10B981;
+    --background:#F8FAFC;
+    --text:#1E293B;
+}
+
+body{
+    font-family:'Poppins',sans-serif;
+    background:var(--background);
+    color:var(--text);
+}
+
+.navbar-brand{
+    font-size:1.5rem;
+}
+
+footer{
+    margin-top:100px;
+}
+
+/* Navbar */
+
+.navbar {
+    padding: 15px 0;
+}
+
+.navbar-brand {
+    font-size: 1.6rem;
+    font-weight: 700;
+}
+
+.nav-link {
+    font-weight: 500;
+    margin-left: 10px;
+    transition: 0.3s;
+}
+
+.nav-link:hover {
+    color: var(--primary);
+}
+
+.btn {
+    border-radius: 8px;
+}
+
+.hero-section{
+    min-height:85vh;
+    display:flex;
+    align-items:center;
+}
+
+.hero-section h1{
+    color:#1E293B;
+    line-height:1.2;
+}
+
+.hero-section p{
+    color:#64748B;
+}
+
+.hero-section img{
+    max-width:100%;
+}
