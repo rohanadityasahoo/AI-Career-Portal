@@ -49,3 +49,49 @@ def register():
         return "Registration Successful"
 
     return render_template('auth/register.html')
+
+from werkzeug.security import check_password_hash
+
+from flask import Blueprint, render_template, request, session, redirect, url_for
+from werkzeug.security import check_password_hash
+
+@auth.route('/login', methods=['GET', 'POST'])
+def login():
+
+    if request.method == 'POST':
+
+        email = request.form.get('email')
+        password = request.form.get('password')
+
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        cursor.execute(
+            "select * from students where email=%s",
+            (email,)
+        )
+
+        student = cursor.fetchone()
+
+        cursor.close()
+        conn.close()
+
+        if student:
+
+            if check_password_hash(student['password'], password):
+
+                session['student_id'] = student['student_id']
+                session['student_name'] = student['full_name']
+
+                return redirect('/dashboard')
+
+        return "Invalid Email or Password"
+
+    return render_template('auth/login.html')
+
+@auth.route('/logout')
+def logout():
+
+    session.clear()
+
+    return redirect('/login')

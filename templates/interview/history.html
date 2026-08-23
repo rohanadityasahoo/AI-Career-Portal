@@ -1,0 +1,83 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}
+Interview History | CareerPilot AI
+{% endblock %}
+
+{% block content %}
+
+<div class="container py-5">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+
+        <div>
+            <h2 class="mb-1">Interview History</h2>
+
+            <p class="text-muted mb-0">
+                Your completed interview practice sessions
+            </p>
+        </div>
+
+        <a href="{{ url_for('interview.interview_home') }}"
+           class="btn btn-primary">
+            Start New Interview
+        </a>
+
+    </div>
+
+    {% if interviews %}
+
+    <div class="card shadow-sm border-0">
+
+        <div class="card-body p-0">
+
+            <div class="table-responsive">
+
+                <table class="table table-hover align-middle mb-0">
+
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4">#</th>
+                            <th>Role</th>
+                            <th>Domain</th>
+                            <th>Difficulty</th>
+                            <th>Average Score</th>
+                            <th>Question Scores</th>
+                            <th class="pe-4">Completed</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {% for interview in interviews %}
+                        <tr>
+                            <td class="ps-4">{{ interview.interview_id }}</td>
+                            <td>{{ interview.role|replace('_', ' ')|title }}</td>
+                            <td>{{ interview.domain }}</td>
+                            <td>{{ interview.difficulty|title }}</td>
+                            <td><strong>{{ interview.average_score }}/100</strong></td>
+                            <td>{{ interview.question_scores }}</td>
+                            <td class="pe-4">{{ interview.created_at }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    {% else %}
+
+    <div class="alert alert-info">
+        You have not completed an interview yet. Start one to see your
+        progress here.
+    </div>
+
+    {% endif %}
+
+</div>
+
+{% endblock %}

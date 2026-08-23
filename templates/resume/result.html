@@ -1,0 +1,383 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}
+Resume Analysis | CareerPilot AI
+{% endblock %}
+
+{% block content %}
+
+<div class="container mt-5">
+
+    <h2 class="mb-4">
+        Resume Analysis
+    </h2>
+
+
+    <!-- ATS Score -->
+     <div class="alert alert-info mb-4">
+
+        <strong>Detected Career Domain:</strong>
+
+        {{ career_domain }}
+
+    </div>
+
+    <div class="card shadow-sm mb-4">
+
+        <div class="card-body text-center">
+
+            <h5 class="text-muted">
+                ATS SCORE
+            </h5>
+
+            <h1 class="display-3 fw-bold">
+                {{ ats_score }}
+            </h1>
+
+            <p class="text-muted">
+                out of 100
+            </p>
+
+            <h3>Recommended Jobs</h3>
+
+            <ul>
+                {% for job in recommended_jobs %}
+                    <li>{{ job }}</li>
+                {% endfor %}
+            </ul>
+
+        </div>
+
+    </div>
+
+    <div class="card shadow-sm mb-4">
+
+        <div class="card-body">
+
+            <h4 class="mb-2">
+                AI Career Recommendations
+            </h4>
+
+            <p class="text-muted mb-4">
+                Career roles identified from your resume using
+                semantic AI analysis and resume evidence.
+            </p>
+
+            {% if ai_recommended_roles %}
+
+                {% for recommendation in ai_recommended_roles %}
+
+                    <div class="border rounded p-3 mb-3">
+
+                        <div class="d-flex justify-content-between
+                                    align-items-center mb-2">
+
+                            <h5 class="mb-0">
+                                {{ loop.index }}.
+                                {{ recommendation.role }}
+                            </h5>
+
+                            <span class="badge bg-primary">
+                                {{ recommendation.match_score }}%
+                            </span>
+
+                        </div>
+
+                        {% if recommendation.matched_keywords %}
+
+                            <div class="mb-2">
+
+                                <small class="text-muted">
+                                    Resume evidence
+                                </small>
+
+                                <div class="mt-1">
+
+                                    {% for skill in recommendation.matched_keywords %}
+
+                                        <span class="badge bg-light text-dark border me-1 mb-1">
+                                            {{ skill }}
+                                        </span>
+
+                                    {% endfor %}
+
+                                </div>
+
+                            </div>
+
+                        {% endif %}
+
+                        <small class="text-muted">
+                            {{ recommendation.reason }}
+                        </small>
+
+                    </div>
+
+                {% endfor %}
+
+            {% else %}
+
+                <div class="alert alert-secondary">
+                    No sufficiently relevant career roles were detected.
+                </div>
+
+            {% endif %}
+
+        </div>
+
+    </div>
+
+    <!-- Resume Analysis Breakdown -->
+
+    <div class="row mb-4">
+
+        <!-- ATS Score -->
+        <div class="col-md-3 mb-3">
+            <div class="card shadow-sm h-100">
+                <div class="card-body text-center">
+
+                    <h6>ATS Score</h6>
+
+                    <h3 class="text-primary">
+                        {{ "%.2f"|format(ats_score) }}%
+                    </h3>
+
+                    <small class="text-muted">
+                        Overall Resume Score
+                    </small>
+
+                </div>
+            </div>
+        </div>
+
+
+        <!-- Skill Score -->
+        <div class="col-md-3 mb-3">
+            <div class="card shadow-sm h-100">
+                <div class="card-body text-center">
+
+                    <h6>Skill Score</h6>
+
+                    <h3>
+                        {{ "%.2f"|format(skill_score) }}%
+                    </h3>
+
+                    <small class="text-muted">
+                        Detected Skills
+                    </small>
+
+                </div>
+            </div>
+        </div>
+
+
+        <!-- Section Score -->
+        <div class="col-md-3 mb-3">
+            <div class="card shadow-sm h-100">
+                <div class="card-body text-center">
+
+                    <h6>Section Score</h6>
+
+                    <h3>
+                        {{ "%.2f"|format(section_score) }}%
+                    </h3>
+
+                    <small class="text-muted">
+                        Resume Structure
+                    </small>
+
+                </div>
+            </div>
+        </div>
+
+
+        <!-- Content Score -->
+        <div class="col-md-3 mb-3">
+            <div class="card shadow-sm h-100">
+                <div class="card-body text-center">
+
+                    <h6>Content Score</h6>
+
+                    <h3>
+                        {{ "%.2f"|format(content_score) }}%
+                    </h3>
+
+                    <small class="text-muted">
+                        Resume Content
+                    </small>
+
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- AI Resume Analysis -->
+
+    <div class="card shadow-sm mb-4">
+
+        <div class="card-body">
+
+            <h4 class="mb-3">
+                AI Resume Analysis
+            </h4>
+
+            <p class="text-muted mb-3">
+                AI analyzes your resume to evaluate its quality,
+                structure, skills, content, and ATS compatibility.
+            </p>
+
+            <div class="row">
+
+                <div class="col-md-6">
+
+                    <p class="mb-1">
+                        <strong>AI Resume Quality</strong>
+                    </p>
+
+                    <h4 class="text-primary">
+                        {{ "%.2f"|format(ai_quality_score) }}%
+                    </h4>
+
+                    <small class="text-muted">
+                        AI-powered resume quality analysis
+                    </small>
+
+                </div>
+
+                <div class="col-md-6">
+
+                    <p class="mb-1">
+                        <strong>Analysis Type</strong>
+                    </p>
+
+                    <h4>
+                        Resume-Only
+                    </h4>
+
+                    <small class="text-muted">
+                        No job description required
+                    </small>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- Detected Skills -->
+
+    <div class="card shadow-sm mb-4">
+
+        <div class="card-body">
+
+            <h4>
+                Detected Skills
+            </h4>
+
+            {% if matched_skills %}
+
+                {% for skill in matched_skills %}
+
+                    <span class="badge bg-success me-2 mb-2">
+                        {{ skill }}
+                    </span>
+
+                {% endfor %}
+
+            {% else %}
+
+                <p class="text-muted">
+                    No skills detected in the resume.
+                </p>
+
+            {% endif %}
+
+        </div>
+
+    </div>
+
+
+    <!-- Resume Sections -->
+
+    <div class="card shadow-sm mb-4">
+
+        <div class="card-body">
+
+            <h4>
+                Resume Sections
+            </h4>
+
+            {% for section, found in detected_sections.items() %}
+
+                {% if found %}
+
+                    <p class="text-success mb-1">
+                        ✓ {{ section|title }}
+                    </p>
+
+                {% else %}
+
+                    <p class="text-danger mb-1">
+                        ✗ {{ section|title }}
+                    </p>
+
+                {% endif %}
+
+            {% endfor %}
+
+        </div>
+
+    </div>
+
+
+    <!-- Recommendations -->
+
+    <div class="card shadow-sm mb-4">
+
+        <div class="card-body">
+
+            <h4>
+                Recommendations
+            </h4>
+
+            {% if recommendations %}
+
+                <ul>
+
+                    {% for recommendation in recommendations %}
+
+                        <li class="mb-2">
+                            {{ recommendation }}
+                        </li>
+
+                    {% endfor %}
+
+                </ul>
+
+            {% else %}
+
+                <p class="text-success">
+                    No major recommendations at this stage.
+                </p>
+
+            {% endif %}
+
+        </div>
+
+    </div>
+
+
+    <a href="{{ url_for('resume.resume_home') }}"
+       class="btn btn-primary">
+
+        Analyze Another Resume
+
+    </a>
+
+</div>
+
+{% endblock %}

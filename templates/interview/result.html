@@ -1,0 +1,90 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}
+Interview Result | CareerPilot AI
+{% endblock %}
+
+{% block content %}
+
+<div class="container mt-5">
+
+    <div class="row justify-content-center">
+
+        <div class="col-lg-8">
+
+            <div class="card shadow-sm">
+
+                <div class="card-body p-4">
+
+                    <h2 class="mb-4">
+                        Interview Evaluation
+                    </h2>
+
+                    <p class="text-muted">
+                        {{ role|replace('_', ' ')|title }}
+                        ·
+                        {{ difficulty|title }}
+                    </p>
+
+                    <hr>
+
+                    <h5>
+                        Question
+                    </h5>
+
+                    <div class="alert alert-primary">
+                        {{ question }}
+                    </div>
+
+                    <h5>
+                        Your Answer
+                    </h5>
+
+                    <div class="card bg-light mb-4">
+
+                        <div class="card-body">
+                            {{ answer }}
+                        </div>
+
+                    </div>
+
+                    <div class="text-center mb-4">
+
+                        <p class="text-muted mb-1">
+                            Interview Score
+                        </p>
+
+                        <h1 class="display-3 fw-bold">
+                            {{ score }}/100
+                        </h1>
+
+                    </div>
+
+                    <div class="alert alert-info">
+
+                        <strong>Feedback:</strong>
+
+                        <br>
+
+                        {{ feedback }}
+
+                    </div>
+
+                    <a href="{{ url_for('interview.interview_home') }}"
+                       class="btn btn-primary">
+
+                        Practice Another Question
+
+                    </a>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

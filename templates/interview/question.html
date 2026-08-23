@@ -1,0 +1,225 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}
+Interview Question | CareerPilot AI
+{% endblock %}
+
+{% block content %}
+
+<div class="container py-5">
+
+    <div class="row justify-content-center">
+
+        <div class="col-lg-8">
+
+            <div class="card shadow-sm border-0">
+
+                <div class="card-body p-4">
+
+                    <!-- Progress -->
+
+                    <div class="d-flex justify-content-between
+                                align-items-center mb-3">
+
+                        <span class="badge bg-primary">
+
+                            {{ role|replace('_', ' ')|title }}
+
+                        </span>
+
+                        <span class="text-muted">
+
+                            Question {{ question_number }}
+                            of
+                            {{ total_questions }}
+
+                        </span>
+
+                    </div>
+
+
+                    <!-- Progress Bar -->
+
+                    <div class="progress mb-4"
+                         style="height: 8px;">
+
+                        <div
+                            class="progress-bar"
+                            role="progressbar"
+                            style="width: {{ (question_number / total_questions) * 100 }}%;">
+
+                        </div>
+
+                    </div>
+
+
+                    <h2 class="mb-3">
+                        AI Mock Interview
+                    </h2>
+
+
+                    <p class="text-muted">
+
+                        Difficulty:
+                        <strong>
+                            {{ difficulty|title }}
+                        </strong>
+
+                    </p>
+
+
+                    <!-- Previous Score -->
+
+                    {% if previous_score is defined %}
+
+                    <div class="alert alert-success">
+
+                        Previous answer score:
+
+                        <strong>
+                            {{ previous_score }}/100
+                        </strong>
+
+                    </div>
+
+                    {% endif %}
+
+
+                    {% if previous_feedback is defined and previous_feedback %}
+
+                    <div class="alert alert-info">
+
+                        <strong>
+                            Feedback on your previous answer:
+                        </strong>
+
+                        <span>
+                            {{ previous_feedback }}
+                        </span>
+
+                    </div>
+
+                    {% endif %}
+
+
+                    {% if previous_strengths or previous_improvements %}
+
+                    <div class="row g-3 mb-4">
+
+                        {% if previous_strengths %}
+
+                        <div class="col-md-6">
+
+                            <div class="border rounded p-3 h-100">
+
+                                <h6 class="text-success">
+                                    What you did well
+                                </h6>
+
+                                <ul class="mb-0 small">
+                                    {% for strength in previous_strengths %}
+                                    <li>{{ strength }}</li>
+                                    {% endfor %}
+                                </ul>
+
+                            </div>
+
+                        </div>
+
+                        {% endif %}
+
+                        {% if previous_improvements %}
+
+                        <div class="col-md-6">
+
+                            <div class="border rounded p-3 h-100">
+
+                                <h6 class="text-primary">
+                                    Try next time
+                                </h6>
+
+                                <ul class="mb-0 small">
+                                    {% for improvement in previous_improvements %}
+                                    <li>{{ improvement }}</li>
+                                    {% endfor %}
+                                </ul>
+
+                            </div>
+
+                        </div>
+
+                        {% endif %}
+
+                    </div>
+
+                    {% endif %}
+
+
+                    <!-- Question -->
+
+                    <div class="alert alert-primary mt-4">
+
+                        <h5 class="mb-2">
+                            Question {{ question_number }}
+                        </h5>
+
+                        <p class="mb-0 fs-5">
+                            {{ question }}
+                        </p>
+
+                    </div>
+
+
+                    <!-- Answer -->
+
+                    <form method="POST"
+                          action="{{ url_for('interview.evaluate_answer') }}">
+
+                        <div class="mb-4">
+
+                            <label for="answer"
+                                   class="form-label fw-semibold">
+
+                                Your Answer
+
+                            </label>
+
+                            <textarea
+                                id="answer"
+                                name="answer"
+                                class="form-control"
+                                rows="8"
+                                placeholder="Type your answer here..."
+                                required></textarea>
+
+                        </div>
+
+
+                        <button type="submit"
+                                class="btn btn-success">
+
+                            {% if question_number == total_questions %}
+
+                                Finish Interview
+
+                            {% else %}
+
+                                Submit & Next Question
+
+                            {% endif %}
+
+                        </button>
+
+                    </form>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

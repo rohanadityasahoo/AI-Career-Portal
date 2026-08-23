@@ -1,0 +1,175 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}
+Career Guidance Chatbot | CareerPilot AI
+{% endblock %}
+
+{% block content %}
+
+<div class="container py-5">
+
+    <div class="row justify-content-center">
+
+        <div class="col-lg-8">
+
+            <div class="d-flex justify-content-between align-items-start mb-4">
+
+                <div>
+                    <h2 class="mb-1">Career Guidance Chatbot</h2>
+
+                    <p class="text-muted mb-0">
+                        Ask for practical guidance on your career preparation.
+                    </p>
+                </div>
+
+                {% if chat_history %}
+                <form method="POST"
+                      action="{{ url_for('chatbot.clear_chat') }}">
+
+                    <button type="submit"
+                            class="btn btn-outline-secondary btn-sm">
+                        Clear Chat
+                    </button>
+
+                </form>
+                {% endif %}
+
+            </div>
+
+            <div class="alert alert-light border small">
+                <strong>Transparent design:</strong>
+                this is a rule-based guidance chatbot. It uses curated career
+                tips and does not connect to an external AI model or API.
+            </div>
+
+            <div class="mb-4">
+
+                <p class="small text-muted mb-2">
+                    Try one of these questions:
+                </p>
+
+                <form method="POST" class="d-flex flex-wrap gap-2">
+
+                    <button type="submit"
+                            name="question"
+                            value="How can I improve my resume for an internship?"
+                            class="btn btn-outline-primary btn-sm">
+                        Improve my resume
+                    </button>
+
+                    <button type="submit"
+                            name="question"
+                            value="How should I prepare for an interview?"
+                            class="btn btn-outline-primary btn-sm">
+                        Prepare for an interview
+                    </button>
+
+                    <button type="submit"
+                            name="question"
+                            value="How can I build projects for my portfolio?"
+                            class="btn btn-outline-primary btn-sm">
+                        Build a portfolio
+                    </button>
+
+                    <button type="submit"
+                            name="question"
+                            value="How should I prepare for campus placement?"
+                            class="btn btn-outline-primary btn-sm">
+                        Prepare for placement
+                    </button>
+
+                </form>
+
+            </div>
+
+            {% if chat_history %}
+
+            <div class="card shadow-sm border-0 mb-4">
+
+                <div class="card-body p-4">
+
+                    {% for message in chat_history %}
+
+                    <div class="mb-4 {% if not loop.last %}border-bottom pb-4{% endif %}">
+
+                        <p class="fw-semibold mb-2">
+                            You
+                        </p>
+
+                        <p class="mb-3">
+                            {{ message.question }}
+                        </p>
+
+                        <p class="fw-semibold text-primary mb-2">
+                            CareerPilot
+                        </p>
+
+                        <p class="mb-0 text-muted" style="white-space: pre-line;">
+                            {{ message.response }}
+                        </p>
+
+                    </div>
+
+                    {% endfor %}
+
+                </div>
+
+            </div>
+
+            {% endif %}
+
+            {% if error %}
+            <div class="alert alert-warning">
+                {{ error }}
+            </div>
+            {% endif %}
+
+            <div class="card shadow-sm border-0">
+
+                <div class="card-body p-4">
+
+                    <form method="POST">
+
+                        <label for="question"
+                               class="form-label fw-semibold">
+                            Your question
+                        </label>
+
+                        <textarea
+                            id="question"
+                            name="question"
+                            class="form-control"
+                            rows="4"
+                            maxlength="500"
+                            placeholder="Example: How can I improve my resume for a Python internship?"></textarea>
+
+                        <div class="form-text">
+                            Keep your question within 500 characters.
+                        </div>
+
+                        <div class="d-flex flex-wrap gap-2 mt-3">
+
+                            <button type="submit" class="btn btn-primary">
+                                Ask CareerPilot
+                            </button>
+
+                            <span class="text-muted small align-self-center">
+                                Topics: resumes, interviews, skills, projects,
+                                internships, placements, and careers.
+                            </span>
+
+                        </div>
+
+                    </form>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

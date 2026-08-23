@@ -1,0 +1,444 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}
+My Profile
+{% endblock %}
+
+{% block content %}
+
+<div class="container py-5">
+
+    <div class="row justify-content-center">
+
+        <div class="col-lg-9">
+
+            <div class="d-flex justify-content-between align-items-center mb-4">
+
+                <div>
+                    <h2 class="fw-bold mb-1">
+                        My Profile
+                    </h2>
+
+                    <p class="text-muted mb-0">
+                        Manage your personal, academic and career information.
+                    </p>
+                </div>
+
+            </div>
+
+
+            <form method="POST" enctype="multipart/form-data">
+
+                <!-- ========================= -->
+                <!-- Profile Photo -->
+                <!-- ========================= -->
+
+                <div class="card shadow-sm mb-4">
+
+                    <div class="card-header bg-white">
+                        <h5 class="mb-0">
+                            Profile Photo
+                        </h5>
+                    </div>
+
+                    <div class="card-body text-center">
+
+                        {% if student.profile_photo %}
+
+                            <img
+                                src="{{ url_for('profile.profile_photo', filename=student.profile_photo) }}"
+                                alt="Profile Photo"
+                                class="rounded-circle mb-3"
+                                style="width: 150px; height: 150px; object-fit: cover;"
+                            >
+
+                        {% else %}
+
+                            <div
+                                class="rounded-circle bg-light border d-flex align-items-center justify-content-center mx-auto mb-3"
+                                style="width: 150px; height: 150px;"
+                            >
+                                <span class="text-muted">
+                                    No Photo
+                                </span>
+                            </div>
+
+                        {% endif %}
+
+
+                        <div class="mt-2">
+
+                            <label class="form-label fw-semibold">
+                                Change Profile Photo
+                            </label>
+
+                            <input
+                                type="file"
+                                name="profile_photo"
+                                class="form-control"
+                                accept=".jpg,.jpeg,.png"
+                            >
+
+                            <small class="text-muted">
+                                JPG, JPEG or PNG only.
+                            </small>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <!-- ========================= -->
+                <!-- Basic Information -->
+                <!-- ========================= -->
+
+                <div class="card shadow-sm mb-4">
+
+                    <div class="card-header bg-white">
+                        <h5 class="mb-0">
+                            Basic Information
+                        </h5>
+                    </div>
+
+                    <div class="card-body">
+
+                        <div class="row g-3">
+
+                            <!-- Full Name -->
+                            <div class="col-md-6">
+
+                                <label class="form-label">
+                                    Full Name
+                                </label>
+
+                                <input
+                                    type="text"
+                                    name="full_name"
+                                    class="form-control"
+                                    value="{{ student.full_name }}"
+                                    required
+                                >
+
+                            </div>
+
+
+                            <!-- Email -->
+                            <div class="col-md-6">
+
+                                <label class="form-label">
+                                    Email
+                                </label>
+
+                                <input
+                                    type="email"
+                                    class="form-control"
+                                    value="{{ student.email }}"
+                                    readonly
+                                >
+
+                                <small class="text-muted">
+                                    Email cannot be changed here.
+                                </small>
+
+                            </div>
+
+
+                            <!-- Phone -->
+                            <div class="col-md-6">
+
+                                <label class="form-label">
+                                    Phone
+                                </label>
+
+                                <input
+                                    type="text"
+                                    name="phone"
+                                    class="form-control"
+                                    value="{{ student.phone }}"
+                                    required
+                                >
+
+                            </div>
+
+
+                            <!-- Gender -->
+                            <div class="col-md-6">
+
+                                <label class="form-label">
+                                    Gender
+                                </label>
+
+                                <select
+                                    name="gender"
+                                    class="form-select"
+                                >
+
+                                    <option value="">
+                                        Select Gender
+                                    </option>
+
+                                    <option
+                                        value="Male"
+                                        {% if student.gender == 'Male' %}selected{% endif %}
+                                    >
+                                        Male
+                                    </option>
+
+                                    <option
+                                        value="Female"
+                                        {% if student.gender == 'Female' %}selected{% endif %}
+                                    >
+                                        Female
+                                    </option>
+
+                                    <option
+                                        value="Other"
+                                        {% if student.gender == 'Other' %}selected{% endif %}
+                                    >
+                                        Other
+                                    </option>
+
+                                </select>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- ========================= -->
+                <!-- Academic Information -->
+                <!-- ========================= -->
+
+                <div class="card shadow-sm mb-4">
+
+                    <div class="card-header bg-white">
+                        <h5 class="mb-0">
+                            Academic Information
+                        </h5>
+                    </div>
+
+                    <div class="card-body">
+
+                        <div class="row g-3">
+
+                            <!-- College -->
+                            <div class="col-md-6">
+
+                                <label class="form-label">
+                                    College / University
+                                </label>
+
+                                <input
+                                    type="text"
+                                    name="college"
+                                    class="form-control"
+                                    value="{{ student.college or '' }}"
+                                >
+
+                            </div>
+
+
+                            <!-- Branch -->
+                            <div class="col-md-6">
+
+                                <label class="form-label">
+                                    Branch / Course
+                                </label>
+
+                                <input
+                                    type="text"
+                                    name="branch"
+                                    class="form-control"
+                                    value="{{ student.branch or '' }}"
+                                >
+
+                            </div>
+
+
+                            <!-- Year -->
+                            <div class="col-md-6">
+
+                                <label class="form-label">
+                                    Current Year
+                                </label>
+
+                                <input
+                                    type="number"
+                                    name="year"
+                                    class="form-control"
+                                    value="{{ student.year or '' }}"
+                                    min="1"
+                                    max="10"
+                                >
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- ========================= -->
+                <!-- Career Information -->
+                <!-- ========================= -->
+
+                <div class="card shadow-sm mb-4">
+
+                    <div class="card-header bg-white">
+                        <h5 class="mb-0">
+                            Career Information
+                        </h5>
+                    </div>
+
+                    <div class="card-body">
+
+                        <div class="row g-3">
+
+                            <!-- Current Semester -->
+                            <div class="col-md-6">
+
+                                <label class="form-label">
+                                    Current Semester
+                                </label>
+
+                                <input
+                                    type="text"
+                                    name="semester"
+                                    class="form-control"
+                                    value="{{ career_profile.semester if career_profile else '' }}"
+                                    placeholder="Semester"
+                                >
+
+                            </div>
+
+
+                            <!-- CGPA -->
+                            <div class="col-md-6">
+
+                                <label class="form-label">
+                                    CGPA
+                                </label>
+
+                                <input
+                                    type="number"
+                                    name="cgpa"
+                                    class="form-control"
+                                    value="{{ career_profile.cgpa if career_profile else '' }}"
+                                    step="0.01"
+                                    min="0"
+                                    max="10"
+                                    placeholder="CGPA (0.00 - 10.00)"
+                                >
+
+                            </div>
+
+
+                            <!-- Career Goal -->
+                            <div class="col-md-6">
+
+                                <label class="form-label">
+                                    Career Goal
+                                </label>
+
+                                <input
+                                    type="text"
+                                    name="career_goal"
+                                    class="form-control"
+                                    value="{{ career_profile.career_goal if career_profile else '' }}"
+                                    placeholder="Enter your career goal"
+                                >
+
+                            </div>
+
+
+                            <!-- Target Job Role -->
+                            <div class="col-md-6">
+
+                                <label class="form-label">
+                                    Target Job Role
+                                </label>
+
+                                <input
+                                    type="text"
+                                    name="target_role"
+                                    class="form-control"
+                                    value="{{ career_profile.target_role if career_profile else '' }}"
+                                    placeholder="Enter your target job role"
+                                >
+
+                            </div>
+
+
+                            <!-- Preferred Industry -->
+                            <div class="col-md-6">
+
+                                <label class="form-label">
+                                    Preferred Industry
+                                </label>
+
+                                <input
+                                    type="text"
+                                    name="preferred_industry"
+                                    class="form-control"
+                                    value="{{ career_profile.preferred_industry if career_profile else '' }}"
+                                    placeholder="Enter your preferred industry"
+                                >
+
+                            </div>
+
+
+                            <!-- Preferred Location -->
+                            <div class="col-md-6">
+
+                                <label class="form-label">
+                                    Preferred Work Location
+                                </label>
+
+                                <input
+                                    type="text"
+                                    name="preferred_location"
+                                    class="form-control"
+                                    value="{{ career_profile.preferred_location if career_profile else '' }}"
+                                    placeholder="Enter your preferred work location"
+                                >
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- ========================= -->
+                <!-- Save -->
+                <!-- ========================= -->
+
+                <div class="d-flex justify-content-end">
+
+                    <button
+                        type="submit"
+                        class="btn btn-primary px-4"
+                    >
+                        Save Changes
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}
