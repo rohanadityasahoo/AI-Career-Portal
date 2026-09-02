@@ -62,3 +62,38 @@ footer{
 .hero-section img{
     max-width:100%;
 }
+
+/* Dashboard quick actions */
+.dashboard-quick-actions {
+    border-color: #DCE6F5;
+}
+
+.quick-actions-title {
+    color: #475569;
+    font-size: 0.8rem;
+    letter-spacing: 0.04em;
+}
+
+.quick-action {
+    background: #F8FBFF;
+    border: 1px solid #D4E3FB;
+    color: #1D4ED8;
+    transition: background-color 0.2s ease, border-color 0.2s ease,
+        box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.quick-action:hover,
+.quick-action:focus-visible {
+    background: var(--primary);
+    border-color: var(--primary);
+    box-shadow: 0 0 0 0.2rem rgba(37, 99, 235, 0.2);
+    color: #FFFFFF;
+    transform: translateY(-1px);
+}
+
+.quick-action:active {
+    background: #1D4ED8;
+    border-color: #1D4ED8;
+    color: #FFFFFF;
+    transform: none;
+}

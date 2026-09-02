@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, session, redirect
-from database.db import get_db_connection
+from database.db import get_db_connection, ensure_career_roadmaps_table
 
 dashboard = Blueprint('dashboard', __name__)
 
@@ -61,6 +61,23 @@ def dashboard_home():
     interview_stats = cursor.fetchone()
 
     # -----------------------------
+    # Roadmap Statistics
+    # -----------------------------
+
+    ensure_career_roadmaps_table(cursor)
+
+    cursor.execute(
+        """
+        select count(*) as roadmap_count
+        from career_roadmaps
+        where student_id = %s
+        """,
+        (student_id,)
+    )
+
+    roadmap_stats = cursor.fetchone()
+
+    # -----------------------------
     # Close Database
     # -----------------------------
 
@@ -76,5 +93,5 @@ def dashboard_home():
         best_interview_score=interview_stats['best_interview_score'],
         latest_interview_score=interview_stats['latest_interview_score'],
         average_interview_score=interview_stats['average_interview_score'],
-        roadmap_count=0
+        roadmap_count=roadmap_stats['roadmap_count']
     )
