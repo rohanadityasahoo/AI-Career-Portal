@@ -1,16 +1,71 @@
+import os
+import gc
+import threading
 import re
 
+# Keep CPU inference lightweight for 1 GB RAM environments such as Railway Trial.
+os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
+os.environ.setdefault("OMP_NUM_THREADS", "1")
+os.environ.setdefault("MKL_NUM_THREADS", "1")
+
+import torch
 from sentence_transformers import SentenceTransformer
-from sklearn.metrics.pairwise import cosine_similarity
+
+
+# Limit PyTorch CPU thread pools before loading the model. This reduces
+# temporary memory allocations during transformer inference.
+try:
+    torch.set_num_threads(1)
+    torch.set_num_interop_threads(1)
+except RuntimeError:
+    pass
 
 
 # =========================================================
 # AI MODEL
 # =========================================================
 
-model = SentenceTransformer(
-    "all-MiniLM-L6-v2"
-)
+_model = None
+_model_lock = threading.Lock()
+
+
+def get_model():
+    """Load the embedding model once, lazily, on CPU."""
+    global _model
+
+    if _model is None:
+        with _model_lock:
+            if _model is None:
+                _model = SentenceTransformer(
+                    "all-MiniLM-L6-v2",
+                    device="cpu"
+                )
+                _model.eval()
+
+    return _model
+
+
+def encode_texts(texts):
+    """Encode text with low-memory CPU inference settings."""
+    if not texts:
+        return []
+
+    # Resume text can be very long. The embedding model does not need
+    # every repeated detail to determine resume quality/role similarity.
+    safe_texts = [str(text)[:12000] for text in texts]
+    encoder = get_model()
+
+    with torch.inference_mode():
+        embeddings = encoder.encode(
+            safe_texts,
+            batch_size=1,
+            normalize_embeddings=True,
+            convert_to_numpy=True,
+            show_progress_bar=False
+        )
+
+    gc.collect()
+    return embeddings
 
 
 # =========================================================
@@ -323,24 +378,16 @@ def semantic_score(resume_text, criterion):
     if not resume_text or not resume_text.strip():
         return 0.0
 
-    resume_embedding = model.encode(
-        [resume_text],
-        normalize_embeddings=True
-    )
+    embeddings = encode_texts([resume_text, criterion])
+    resume_embedding = embeddings[0]
+    criterion_embedding = embeddings[1]
 
-    criterion_embedding = model.encode(
-        [criterion],
-        normalize_embeddings=True
-    )
+    similarity = float(resume_embedding @ criterion_embedding)
 
-    similarity = cosine_similarity(
-        resume_embedding,
-        criterion_embedding
-    )[0][0]
+    score = ((similarity + 1) / 2) * 100
 
-    score = (
-        (similarity + 1) / 2
-    ) * 100
+    del embeddings, resume_embedding, criterion_embedding
+    gc.collect()
 
     return round(
         max(
@@ -352,7 +399,6 @@ def semantic_score(resume_text, criterion):
         ),
         2
     )
-
 
 # =========================================================
 # AI RESUME QUALITY
@@ -526,10 +572,7 @@ def recommend_ai_roles(
     # Create resume embedding
     # -----------------------------------------------------
 
-    resume_embedding = model.encode(
-        [resume_text],
-        normalize_embeddings=True
-    )
+    resume_embedding = encode_texts([resume_text])
 
 
     # -----------------------------------------------------
@@ -558,20 +601,14 @@ def recommend_ai_roles(
     # Create role embeddings
     # -----------------------------------------------------
 
-    role_embeddings = model.encode(
-        role_descriptions,
-        normalize_embeddings=True
-    )
+    role_embeddings = encode_texts(role_descriptions)
 
 
     # -----------------------------------------------------
     # Calculate semantic similarity
     # -----------------------------------------------------
 
-    similarities = cosine_similarity(
-        resume_embedding,
-        role_embeddings
-    )[0]
+    similarities = (resume_embedding @ role_embeddings.T)[0]
 
 
     recommendations = []
@@ -810,4 +847,10 @@ def recommend_ai_roles(
     # RETURN TOP RECOMMENDATIONS
     # =====================================================
 
-    return recommendations[:top_n]
+    result = recommendations[:top_n]
+
+    # Release temporary embedding arrays after each analysis.
+    del resume_embedding, role_embeddings, recommendations
+    gc.collect()
+
+    return result

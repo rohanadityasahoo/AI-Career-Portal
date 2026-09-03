@@ -1166,6 +1166,355 @@ def recommend_jobs(all_skills, limit=10):
     }
 
     # ========================================================
+    # DOMAIN DETECTION
+    #
+    # The previous recommender compared every resume against
+    # every profession. That allowed weak/interdisciplinary
+    # words such as "healthcare" or "first aid" from an IT
+    # project to push medical jobs above genuine IT jobs.
+    #
+    # We first identify the resume's primary professional
+    # domain from strong anchor skills, then rank jobs only
+    # inside that domain.
+    # ========================================================
+
+    domain_anchors = {
+        "Information Technology": {
+            "programming", "python", "java", "c", "c++", "cpp",
+            "javascript", "typescript", "html", "css", "flask",
+            "django", "fastapi", "node.js", "nodejs", "react",
+            "angular", "vue", "sql", "mysql", "postgresql",
+            "mongodb", "sqlite", "machine learning", "deep learning",
+            "artificial intelligence", "nlp", "data science",
+            "tensorflow", "pytorch", "scikit-learn", "git", "github",
+            "docker", "kubernetes", "aws", "azure", "linux",
+            "cybersecurity", "networking", "software development",
+            "algorithms", "database", "cloud computing"
+        },
+        "Electrical Engineering": {
+            "electrical", "electrical engineering", "power systems",
+            "electrical machines", "matlab", "simulink",
+            "control systems", "circuit analysis", "plc", "scada",
+            "industrial automation"
+        },
+        "Electronics Engineering": {
+            "electronics", "electronics engineering", "embedded systems",
+            "embedded c", "microcontroller", "microprocessor",
+            "pcb design", "arduino", "raspberry pi", "vlsi",
+            "verilog", "vhdl", "fpga", "digital design", "iot",
+            "internet of things"
+        },
+        "Civil Engineering": {
+            "civil", "civil engineering", "autocad", "civil 3d",
+            "structural analysis", "structural design", "construction",
+            "construction management", "surveying", "staad pro",
+            "staad.pro", "quantity surveying"
+        },
+        "Mechanical Engineering": {
+            "mechanical engineering", "mechanical design",
+            "thermodynamics", "fluid mechanics", "manufacturing",
+            "solidworks", "catia", "creo", "cad", "3d modeling",
+            "cam", "production", "automotive", "automotive engineering",
+            "vehicle design", "aerospace", "aerodynamics", "aircraft",
+            "propulsion"
+        },
+        "Finance & Accounting": {
+            "accounting", "financial accounting", "bookkeeping",
+            "tally", "tally erp", "accounts payable",
+            "accounts receivable", "finance", "financial analysis",
+            "financial modeling", "investment analysis", "budgeting",
+            "forecasting", "auditing", "audit", "taxation", "tax",
+            "gst", "income tax", "banking"
+        },
+        "Marketing & Sales": {
+            "marketing", "digital marketing", "marketing strategy",
+            "brand management", "seo", "sem", "google ads",
+            "social media marketing", "email marketing",
+            "content marketing", "sales", "sales management",
+            "customer service", "lead generation", "business development",
+            "customer acquisition", "social media"
+        },
+        "Human Resources": {
+            "human resources", "hr", "hr operations",
+            "employee relations", "recruitment", "talent acquisition",
+            "hiring", "hr analytics", "workforce planning"
+        },
+        "Travel & Tourism": {
+            "travel", "tourism", "travel consultant",
+            "travel consulting", "travel planning", "itineraries",
+            "reservations", "ticketing", "tour planning",
+            "tour coordinator", "travel coordination", "tour packages",
+            "destination management", "travel operations"
+        },
+        "Hospitality": {
+            "hospitality", "hotel management", "hotel operations",
+            "guest relations", "front office", "restaurant management",
+            "food and beverage", "catering", "banquet management"
+        },
+        "Healthcare": {
+            "healthcare", "health administration", "hospital management",
+            "medical records", "patient care", "health informatics",
+            "clinical data", "clinical research", "public health",
+            "epidemiology"
+        },
+        "Nursing": {
+            "nursing", "registered nurse", "staff nurse",
+            "patient care", "clinical nursing", "critical care",
+            "icu", "community health nursing", "public health",
+            "emergency nursing", "first aid"
+        },
+        "Pharmacy": {
+            "pharmacy", "pharmacology", "dispensing",
+            "clinical pharmacy", "quality control", "quality assurance",
+            "pharmaceutical chemistry", "pharmacovigilance",
+            "drug safety"
+        },
+        "Microbiology": {
+            "microbiology", "microbiologist", "bacteriology",
+            "microbial culture", "clinical microbiology",
+            "pathology", "microscopy", "laboratory", "pcr"
+        },
+        "Biotechnology": {
+            "biotechnology", "biotech", "molecular biology",
+            "cell culture", "genetic engineering", "bioinformatics",
+            "genomics"
+        },
+        "Chemistry": {
+            "chemistry", "analytical chemistry", "organic chemistry",
+            "inorganic chemistry"
+        },
+        "Agriculture": {
+            "agriculture", "agricultural science", "crop production",
+            "soil science", "agronomy", "crop management", "plant science"
+        },
+        "Environment": {
+            "environmental science", "environmental management",
+            "environmental impact assessment", "environmental engineering",
+            "waste management", "water treatment"
+        },
+        "Architecture & Design": {
+            "architecture", "architectural design", "autocad", "revit",
+            "3d modeling", "interior design"
+        },
+        "UI/UX & Creative Design": {
+            "ui design", "user interface", "ux design",
+            "user experience", "figma", "adobe xd", "user research",
+            "graphic design", "photoshop", "illustrator", "adobe",
+            "canva"
+        },
+        "Media & Content": {
+            "content writing", "copywriting", "content creation",
+            "writing", "journalism", "reporting", "news writing", "media"
+        },
+        "Education": {
+            "teaching", "education", "lesson planning",
+            "classroom management", "lecturing", "academic", "research"
+        },
+        "Legal": {
+            "law", "legal", "legal research", "contract", "litigation",
+            "compliance", "risk management", "regulatory"
+        },
+        "Logistics & Supply Chain": {
+            "logistics", "supply chain", "inventory management",
+            "transportation", "procurement", "purchasing",
+            "vendor management"
+        },
+        "Aviation": {
+            "aviation", "airport operations", "airline operations",
+            "airline reservations"
+        },
+        "Sports & Fitness": {
+            "fitness", "personal training", "strength training",
+            "exercise", "sports", "coaching", "athletics", "training"
+        }
+    }
+
+    # Job -> domain mapping. This is intentionally explicit so
+    # a project topic cannot override the candidate's core field.
+    job_domains = {
+        "Python Developer": "Information Technology",
+        "Java Developer": "Information Technology",
+        "C/C++ Developer": "Information Technology",
+        "JavaScript Developer": "Information Technology",
+        "Frontend Developer": "Information Technology",
+        "Backend Developer": "Information Technology",
+        "Full Stack Developer": "Information Technology",
+        "Software Engineer": "Information Technology",
+        "Web Developer": "Information Technology",
+        "Django Developer": "Information Technology",
+        "Python Backend Developer": "Information Technology",
+        "Database Developer": "Information Technology",
+        "Database Administrator": "Information Technology",
+        "Data Analyst": "Information Technology",
+        "Data Scientist": "Information Technology",
+        "Machine Learning Engineer": "Information Technology",
+        "AI Engineer": "Information Technology",
+        "Cybersecurity Analyst": "Information Technology",
+        "Network Engineer": "Information Technology",
+        "DevOps Engineer": "Information Technology",
+        "Cloud Engineer": "Information Technology",
+        "IT Support Engineer": "Information Technology",
+        "IT Project Manager": "Information Technology",
+        "Business Analyst": "Information Technology",
+
+        "Electrical Engineer": "Electrical Engineering",
+        "Power Systems Engineer": "Electrical Engineering",
+        "Electrical Design Engineer": "Electrical Engineering",
+        "Control Systems Engineer": "Electrical Engineering",
+        "PLC/SCADA Engineer": "Electrical Engineering",
+
+        "Electronics Engineer": "Electronics Engineering",
+        "Embedded Systems Engineer": "Electronics Engineering",
+        "IoT Engineer": "Electronics Engineering",
+        "VLSI Engineer": "Electronics Engineering",
+        "PCB Design Engineer": "Electronics Engineering",
+
+        "Civil Engineer": "Civil Engineering",
+        "Structural Engineer": "Civil Engineering",
+        "Site Engineer": "Civil Engineering",
+        "Construction Engineer": "Civil Engineering",
+        "Quantity Surveyor": "Civil Engineering",
+        "Planning Engineer": "Civil Engineering",
+        "AutoCAD Civil Designer": "Civil Engineering",
+
+        "Mechanical Engineer": "Mechanical Engineering",
+        "Mechanical Design Engineer": "Mechanical Engineering",
+        "CAD Engineer": "Mechanical Engineering",
+        "Manufacturing Engineer": "Mechanical Engineering",
+        "Automotive Engineer": "Mechanical Engineering",
+        "Aerospace Engineer": "Mechanical Engineering",
+
+        "Accountant": "Finance & Accounting",
+        "Financial Analyst": "Finance & Accounting",
+        "Audit Associate": "Finance & Accounting",
+        "Tax Consultant": "Finance & Accounting",
+        "Banking Associate": "Finance & Accounting",
+        "Investment Analyst": "Finance & Accounting",
+
+        "Marketing Executive": "Marketing & Sales",
+        "Digital Marketing Specialist": "Marketing & Sales",
+        "SEO Specialist": "Marketing & Sales",
+        "Sales Executive": "Marketing & Sales",
+        "Business Development Executive": "Marketing & Sales",
+        "Social Media Manager": "Marketing & Sales",
+
+        "HR Executive": "Human Resources",
+        "Recruitment Specialist": "Human Resources",
+        "Talent Acquisition Specialist": "Human Resources",
+        "HR Analyst": "Human Resources",
+
+        "Travel Consultant": "Travel & Tourism",
+        "Travel Agent": "Travel & Tourism",
+        "Tour Coordinator": "Travel & Tourism",
+        "Travel Coordinator": "Travel & Tourism",
+        "Tourism Executive": "Travel & Tourism",
+        "Reservation Executive": "Travel & Tourism",
+        "Tour Operator": "Travel & Tourism",
+        "Destination Planner": "Travel & Tourism",
+        "Travel Operations Executive": "Travel & Tourism",
+
+        "Hotel Management Executive": "Hospitality",
+        "Front Office Executive": "Hospitality",
+        "Guest Relations Executive": "Hospitality",
+        "Food & Beverage Executive": "Hospitality",
+        "Event Management Executive": "Hospitality",
+
+        "Healthcare Administrator": "Healthcare",
+        "Health Informatics Analyst": "Healthcare",
+        "Medical Records Executive": "Healthcare",
+        "Clinical Research Assistant": "Healthcare",
+        "Public Health Analyst": "Healthcare",
+
+        "Registered Nurse": "Nursing",
+        "Staff Nurse": "Nursing",
+        "ICU Nurse": "Nursing",
+        "Community Health Nurse": "Nursing",
+        "Emergency Nurse": "Nursing",
+
+        "Pharmacist": "Pharmacy",
+        "Clinical Pharmacist": "Pharmacy",
+        "Pharmaceutical Quality Analyst": "Pharmacy",
+        "Pharmacovigilance Associate": "Pharmacy",
+
+        "Microbiologist": "Microbiology",
+        "Clinical Microbiologist": "Microbiology",
+        "Food Microbiologist": "Microbiology",
+        "Laboratory Technician": "Microbiology",
+        "Quality Control Analyst": "Microbiology",
+
+        "Biotechnologist": "Biotechnology",
+        "Biotechnology Research Assistant": "Biotechnology",
+        "Bioinformatics Analyst": "Biotechnology",
+        "Molecular Biology Researcher": "Biotechnology",
+
+        "Chemist": "Chemistry",
+        "Laboratory Analyst": "Chemistry",
+        "Chemical Quality Analyst": "Chemistry",
+
+        "Agricultural Officer": "Agriculture",
+        "Agronomist": "Agriculture",
+        "Agricultural Research Assistant": "Agriculture",
+
+        "Environmental Scientist": "Environment",
+        "Environmental Engineer": "Environment",
+
+        "Architect": "Architecture & Design",
+        "Architectural Designer": "Architecture & Design",
+        "Interior Designer": "Architecture & Design",
+
+        "UI Designer": "UI/UX & Creative Design",
+        "UX Designer": "UI/UX & Creative Design",
+        "Graphic Designer": "UI/UX & Creative Design",
+
+        "Content Writer": "Media & Content",
+        "Journalist": "Media & Content",
+        "Social Media Content Creator": "Media & Content",
+
+        "Teacher": "Education",
+        "School Teacher": "Education",
+        "Lecturer": "Education",
+        "Academic Research Assistant": "Education",
+
+        "Legal Associate": "Legal",
+        "Legal Research Assistant": "Legal",
+        "Compliance Analyst": "Legal",
+
+        "Logistics Coordinator": "Logistics & Supply Chain",
+        "Supply Chain Analyst": "Logistics & Supply Chain",
+        "Procurement Executive": "Logistics & Supply Chain",
+
+        "Aviation Operations Executive": "Aviation",
+        "Airline Reservation Executive": "Aviation",
+
+        "Fitness Trainer": "Sports & Fitness",
+        "Sports Coach": "Sports & Fitness",
+    }
+
+    domain_scores = {}
+    for domain, anchors in domain_anchors.items():
+        matched_anchors = skills.intersection(anchors)
+        if matched_anchors:
+            # Strong technical anchors get more influence than generic
+            # terms. A resume containing several IT technologies should
+            # therefore remain IT even when a project is healthcare-related.
+            strong_count = sum(
+                1 for skill in matched_anchors
+                if skill in {
+                    "python", "java", "c++", "javascript", "flask",
+                    "django", "fastapi", "sql", "mysql", "postgresql",
+                    "machine learning", "deep learning", "artificial intelligence",
+                    "nlp", "tensorflow", "pytorch", "git", "github",
+                    "software development", "programming"
+                }
+            )
+            domain_scores[domain] = len(matched_anchors) + (strong_count * 1.5)
+
+    if domain_scores:
+        primary_domain = max(domain_scores, key=domain_scores.get)
+    else:
+        primary_domain = None
+
+    # ========================================================
     # CALCULATE MATCHES
     # ========================================================
 
@@ -1173,40 +1522,51 @@ def recommend_jobs(all_skills, limit=10):
 
     for job_title, required_skills in job_profiles.items():
 
+        # Hard domain gate: do not recommend jobs from unrelated
+        # professions when we can identify the primary domain.
+        job_domain = job_domains.get(job_title)
+        if primary_domain and job_domain != primary_domain:
+            continue
+
         matched = []
 
         for required_skill in required_skills:
-
-            required_skill = required_skill.lower()
+            required_skill = required_skill.lower().strip()
 
             # Exact match
             if required_skill in skills:
                 matched.append(required_skill)
                 continue
 
-            # Partial match
-            for user_skill in skills:
-
-                if (
-                    required_skill in user_skill
-                    or user_skill in required_skill
-                ):
-                    matched.append(required_skill)
-                    break
+            # Safe partial match.
+            # Do not use substring matching for tiny tokens such as
+            # "c", because "c" would otherwise match "c++", "css", etc.
+            if len(required_skill) >= 4:
+                for user_skill in skills:
+                    if len(user_skill) >= 4 and (
+                        required_skill in user_skill
+                        or user_skill in required_skill
+                    ):
+                        matched.append(required_skill)
+                        break
 
         matched = list(dict.fromkeys(matched))
 
         if not matched:
             continue
 
-        match_percentage = (
-            len(matched) / len(required_skills)
-        ) * 100
+        # Reward stronger coverage, but keep the result readable.
+        base_score = (len(matched) / len(required_skills)) * 100
+
+        # Small bonus for multiple independent matches.
+        diversity_bonus = min(len(matched) * 2, 12)
+
+        final_score = min(base_score + diversity_bonus, 100)
 
         scored_jobs.append(
             (
                 job_title,
-                match_percentage,
+                final_score,
                 len(matched)
             )
         )
