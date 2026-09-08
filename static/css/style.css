@@ -97,3 +97,116 @@ footer{
     color: #FFFFFF;
     transform: none;
 }
+
+/* AI interview */
+.interview-hero {
+    background: linear-gradient(135deg, #1D4ED8, #2563EB 55%, #0EA5E9);
+    border-radius: 16px;
+    box-shadow: 0 12px 28px rgba(37, 99, 235, 0.18);
+    color: #FFFFFF;
+    padding: 2rem;
+}
+
+.interview-eyebrow {
+    color: #1D4ED8;
+    display: inline-block;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.interview-hero .interview-eyebrow {
+    color: #DBEAFE;
+}
+
+.interview-hero-stat {
+    background: rgba(255, 255, 255, 0.14);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: 0.8rem 0.9rem;
+}
+
+.interview-hero-stat strong {
+    font-size: 1.05rem;
+}
+
+.interview-hero-stat span {
+    color: #DBEAFE;
+    font-size: 0.8rem;
+    margin-top: 0.15rem;
+}
+
+.interview-setup-card,
+.interview-session-card {
+    border: 1px solid #DCE6F5;
+}
+
+.interview-guidance-card {
+    background: #EEF6FF;
+    border: 1px solid #D4E3FB;
+}
+
+.interview-role-badge {
+    background: #DBEAFE;
+    color: #1E40AF;
+    font-weight: 700;
+}
+
+.interview-question-count {
+    color: #475569;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.interview-session-card .progress-bar {
+    background: var(--primary);
+}
+
+.interview-feedback-alert {
+    border: 0;
+}
+
+.interview-question-card {
+    background: #F0F7FF;
+    border: 1px solid #BFDBFE;
+    border-radius: 12px;
+    padding: 1.25rem;
+}
+
+.interview-score-summary {
+    background: #F8FBFF;
+    border: 1px solid #DCE6F5;
+    border-radius: 12px;
+    padding: 1.5rem;
+}
+
+.interview-score-row .progress {
+    background: #E2E8F0;
+}
+
+.interview-rubric {
+    background: #F8FBFF;
+    border: 1px solid #DCE6F5;
+    border-radius: 12px;
+    padding: 1.25rem;
+}
+
+.interview-rubric .progress-bar {
+    background: #2563EB;
+}
+
+[data-interview-answer] {
+    margin-top: 0.75rem;
+    min-height: 11rem;
+    resize: vertical;
+}
+
+@media (max-width: 575.98px) {
+    .interview-hero {
+        padding: 1.5rem;
+    }
+}

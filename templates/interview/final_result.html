@@ -18,9 +18,13 @@ Interview Report | CareerPilot AI
 
                     <div class="text-center">
 
-                        <h2>
-                            Interview Completed
-                        </h2>
+                        <span class="interview-eyebrow">
+                            Interview complete
+                        </span>
+
+                        <h1 class="h2 fw-bold mt-2 mb-1">
+                            Here’s how you performed
+                        </h1>
 
                         <p class="text-muted">
                             {{ role|replace('_', ' ')|title }}
@@ -36,48 +40,95 @@ Interview Report | CareerPilot AI
 
                     <!-- Final Score -->
 
-                    <div class="text-center my-4">
+                    <div class="interview-score-summary text-center my-4">
 
-                        <p class="text-muted mb-1">
-                            Overall Interview Score
+                        <p class="text-muted mb-2">
+                            Overall practice score
                         </p>
 
-                        <h1 class="display-2 fw-bold">
+                        <h2 class="display-2 fw-bold">
                             {{ average_score }}/100
-                        </h1>
+                        </h2>
+
+                        <div class="progress mt-3" style="height: 10px;">
+                            <div class="progress-bar
+                                {% if average_score >= 80 %}
+                                    bg-success
+                                {% elif average_score >= 60 %}
+                                    bg-primary
+                                {% elif average_score >= 40 %}
+                                    bg-warning
+                                {% else %}
+                                    bg-danger
+                                {% endif %}"
+                                role="progressbar"
+                                aria-valuenow="{{ average_score }}"
+                                aria-valuemin="0"
+                                aria-valuemax="100"
+                                style="width: {{ average_score }}%;">
+                            </div>
+                        </div>
+
+                        <p class="small text-muted mt-3 mb-0">
+                            {% if average_score >= 80 %}
+                                Strong work—you are communicating with clarity and depth.
+                            {% elif average_score >= 60 %}
+                                A solid foundation. More specific examples will lift your answers.
+                            {% elif average_score >= 40 %}
+                                Keep practising structure and relevance to build confidence.
+                            {% else %}
+                                Start with shorter, structured answers and develop from there.
+                            {% endif %}
+                        </p>
 
                     </div>
 
 
                     <!-- Question Scores -->
 
-                    <h4 class="mb-3">
-                        Question Scores
-                    </h4>
+                    <h2 class="h5 fw-bold mb-3">
+                        Question-by-question scores
+                    </h2>
 
                     {% for score in scores %}
 
-                    <div class="d-flex justify-content-between
-                                align-items-center mb-3">
+                    <div class="interview-score-row mb-3">
 
-                        <span>
-                            Question {{ loop.index }}
-                        </span>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="fw-semibold">Question {{ loop.index }}</span>
 
-                        <span class="badge
-                            {% if score >= 80 %}
-                                bg-success
-                            {% elif score >= 60 %}
-                                bg-primary
-                            {% elif score >= 40 %}
-                                bg-warning text-dark
-                            {% else %}
-                                bg-danger
-                            {% endif %}">
+                            <span class="badge
+                                {% if score >= 80 %}
+                                    bg-success
+                                {% elif score >= 60 %}
+                                    bg-primary
+                                {% elif score >= 40 %}
+                                    bg-warning text-dark
+                                {% else %}
+                                    bg-danger
+                                {% endif %}">
+                                {{ score }}/100
+                            </span>
+                        </div>
 
-                            {{ score }}/100
-
-                        </span>
+                        <div class="progress" style="height: 6px;">
+                            <div class="progress-bar
+                                {% if score >= 80 %}
+                                    bg-success
+                                {% elif score >= 60 %}
+                                    bg-primary
+                                {% elif score >= 40 %}
+                                    bg-warning
+                                {% else %}
+                                    bg-danger
+                                {% endif %}"
+                                role="progressbar"
+                                aria-valuenow="{{ score }}"
+                                aria-valuemin="0"
+                                aria-valuemax="100"
+                                style="width: {{ score }}%;">
+                            </div>
+                        </div>
 
                     </div>
 
@@ -86,7 +137,7 @@ Interview Report | CareerPilot AI
 
                     <!-- Overall Feedback -->
 
-                    <div class="alert alert-info mt-4">
+                    <div class="alert alert-info mt-4 interview-feedback-alert">
 
                         <h5>
                             Overall Feedback
@@ -99,13 +150,13 @@ Interview Report | CareerPilot AI
                     </div>
 
 
-                    <div class="text-center mt-4">
+                    <div class="d-flex flex-column flex-sm-row justify-content-center gap-2 mt-4">
 
                         <a
                             href="{{ url_for('interview.interview_home') }}"
                             class="btn btn-primary">
 
-                            Start New Interview
+                            Practice again
 
                         </a>
 
@@ -113,7 +164,7 @@ Interview Report | CareerPilot AI
 
                         <a
                             href="{{ url_for('interview.interview_history') }}"
-                            class="btn btn-outline-primary ms-2">
+                            class="btn btn-outline-primary">
 
                             View History
 

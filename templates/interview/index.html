@@ -6,25 +6,65 @@ AI Interview Preparation | CareerPilot AI
 
 {% block content %}
 
-<div class="container mt-5 mb-5">
+<div class="container py-5">
 
     <div class="row justify-content-center">
 
-        <div class="col-lg-8">
+        <div class="col-lg-9 col-xl-8">
 
-            <div class="card shadow-sm">
+            <section class="interview-hero mb-4">
+
+                <span class="interview-eyebrow">AI-powered practice</span>
+
+                <h1 class="h2 fw-bold mb-2">
+                    Prepare with purpose, not guesswork.
+                </h1>
+
+                <p class="mb-0">
+                    Practice realistic, role-based questions and receive
+                    feedback you can use in your next answer.
+                </p>
+
+                <div class="row g-3 mt-2">
+                    <div class="col-sm-4">
+                        <div class="interview-hero-stat">
+                            <strong>5</strong>
+                            <span>questions per session</span>
+                        </div>
+                    </div>
+                    <div class="col-sm-4">
+                        <div class="interview-hero-stat">
+                            <strong>Instant</strong>
+                            <span>answer feedback</span>
+                        </div>
+                    </div>
+                    <div class="col-sm-4">
+                        <div class="interview-hero-stat">
+                            <strong>0–100</strong>
+                            <span>practice score</span>
+                        </div>
+                    </div>
+                </div>
+
+            </section>
+
+            <div class="card shadow-sm border-0 interview-setup-card">
 
                 <div class="card-body p-4">
 
-                    <h2 class="mb-3">
-                        AI Interview Preparation
+                    <h2 class="h4 fw-bold mb-1">
+                        Configure your practice interview
                     </h2>
 
                     <p class="text-muted mb-4">
-                        Practice role-based interview questions and receive
-                        clear, explainable feedback on your answers.
+                        Pick a target role and the level of challenge you want.
                     </p>
 
+                    {% if error %}
+                    <div class="alert alert-danger" role="alert">
+                        {{ error }}
+                    </div>
+                    {% endif %}
 
                     <form method="POST">
 
@@ -32,17 +72,19 @@ AI Interview Preparation | CareerPilot AI
 
                         <div class="mb-4">
 
-                            <label class="form-label fw-semibold">
+                            <label for="role" class="form-label fw-semibold">
                                 Job Role
                             </label>
 
                             <select
                                 name="role"
+                                id="role"
+                                data-selected-value="{{ selected_role }}"
                                 class="form-select"
                                 required
                             >
 
-                                <option value="">
+                                <option value="" {% if not selected_role %}selected{% endif %}>
                                     Select Role
                                 </option>
 
@@ -863,6 +905,10 @@ AI Interview Preparation | CareerPilot AI
 
                             </select>
 
+                            <div class="form-text">
+                                Questions are tailored to the selected role’s domain.
+                            </div>
+
                         </div>
 
 
@@ -870,29 +916,34 @@ AI Interview Preparation | CareerPilot AI
 
                         <div class="mb-4">
 
-                            <label class="form-label fw-semibold">
+                            <label for="difficulty" class="form-label fw-semibold">
                                 Difficulty
                             </label>
 
                             <select
                                 name="difficulty"
+                                id="difficulty"
                                 class="form-select"
                                 required
                             >
 
-                                <option value="easy">
+                                <option value="easy" {% if selected_difficulty == 'easy' %}selected{% endif %}>
                                     Easy
                                 </option>
 
-                                <option value="medium" selected>
+                                <option value="medium" {% if selected_difficulty == 'medium' %}selected{% endif %}>
                                     Medium
                                 </option>
 
-                                <option value="hard">
+                                <option value="hard" {% if selected_difficulty == 'hard' %}selected{% endif %}>
                                     Hard
                                 </option>
 
                             </select>
+
+                            <div class="form-text">
+                                Easy is more HR-focused; hard prioritises technical depth.
+                            </div>
 
                         </div>
 
@@ -903,7 +954,7 @@ AI Interview Preparation | CareerPilot AI
                             type="submit"
                             class="btn btn-primary w-100"
                         >
-                            Start Interview
+                            Begin 5-question interview
                         </button>
 
                     </form>
@@ -912,37 +963,31 @@ AI Interview Preparation | CareerPilot AI
 
             </div>
 
-            <div class="card border-0 bg-light mt-4">
+            <div class="card border-0 mt-4 interview-guidance-card">
 
                 <div class="card-body p-4">
 
                     <h5 class="mb-3">
-                        How interview scoring works
+                        Make each answer stronger
                     </h5>
 
                     <p class="text-muted mb-3">
-                        This college project uses a curated question bank,
-                        organised by job role and difficulty. Each practice
-                        interview contains five different questions.
+                        Use a clear structure: briefly state your approach,
+                        explain why, and support it with an example.
                     </p>
 
                     <ul class="mb-0 text-muted">
                         <li>
-                            The selected role determines the interview domain
-                            and question set.
+                            Aim for 50–120 words when the question needs an explanation.
                         </li>
                         <li>
-                            Difficulty changes the balance of technical and
-                            HR questions.
+                            Connect your answer to a project, study, or practical experience.
                         </li>
                         <li>
-                            Answers are scored from 0 to 100 using answer
-                            detail, explanation, examples, structure, and
-                            relevance to the displayed question.
+                            Explain your reasoning—not only the final outcome.
                         </li>
                         <li>
-                            The result is guidance for practice, not an
-                            official hiring decision.
+                            Scores are practice guidance, not a hiring decision.
                         </li>
                     </ul>
 

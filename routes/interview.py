@@ -17,6 +17,7 @@ from database.db import get_db_connection
 interview = Blueprint('interview', __name__)
 
 TOTAL_QUESTIONS = 5
+VALID_DIFFICULTIES = {"easy", "medium", "hard"}
 
 
 # ============================================================
@@ -342,17 +343,35 @@ def interview_home():
 
     if request.method == 'POST':
 
-        role = request.form.get('role')
-        difficulty = request.form.get('difficulty')
+        role = (request.form.get('role') or '').strip()
+        difficulty = (request.form.get('difficulty') or '').strip().lower()
 
         if not role or not difficulty:
-            return "Role and difficulty are required"
+            return render_template(
+                'interview/index.html',
+                error='Choose both a role and difficulty to begin.',
+                selected_role=role,
+                selected_difficulty=difficulty or 'medium'
+            ), 400
+
+        if difficulty not in VALID_DIFFICULTIES:
+            return render_template(
+                'interview/index.html',
+                error='Choose a valid interview difficulty.',
+                selected_role=role,
+                selected_difficulty='medium'
+            ), 400
 
         # Convert selected role into question-bank domain
         domain = get_interview_domain(role)
 
         if not domain:
-            return "Unsupported job role"
+            return render_template(
+                'interview/index.html',
+                error='That role is not supported yet. Please choose a role from the list.',
+                selected_role=role,
+                selected_difficulty=difficulty
+            ), 400
 
         # Start new interview session
 
@@ -363,27 +382,22 @@ def interview_home():
         session['interview_question_number'] = 1
         session['interview_scores'] = []
 
-        # Generate question pool using domain
+        # Generate a role-specific question pool using the mapped domain.
 
         question_pool = get_question_pool(
-            domain,
-            difficulty
+            role,
+            difficulty,
+            domain=domain
         )
 
         if not question_pool:
 
-            # Fallback to role itself
-            question_pool = get_question_pool(
-                role,
-                difficulty
-            )
-
-        if not question_pool:
-
-            return (
-                "No interview questions are available "
-                "for this role and difficulty."
-            )
+            return render_template(
+                'interview/index.html',
+                error='No questions are available for that selection. Please try another role or difficulty.',
+                selected_role=role,
+                selected_difficulty=difficulty
+            ), 400
 
         # Remove first question from pool
 
@@ -409,7 +423,9 @@ def interview_home():
         )
 
     return render_template(
-        'interview/index.html'
+        'interview/index.html',
+        selected_role='',
+        selected_difficulty='medium'
     )
 
 
@@ -461,7 +477,7 @@ def interview_history():
 @interview.route('/interview/evaluate', methods=['POST'])
 def evaluate_answer():
 
-    answer = request.form.get('answer')
+    answer = (request.form.get('answer') or '').strip()
 
     # The current question is stored when the interview starts. Keeping it
     # in the session makes sure the answer is scored against the question
@@ -491,8 +507,16 @@ def evaluate_answer():
     )
 
     if not answer:
-
-        return "Answer is required"
+        return render_template(
+            'interview/question.html',
+            question=question,
+            role=role,
+            domain=domain,
+            difficulty=difficulty,
+            question_number=question_number,
+            total_questions=TOTAL_QUESTIONS,
+            error='Write an answer before continuing.'
+        ), 400
 
     if not role or not difficulty or not question:
 
@@ -509,7 +533,9 @@ def evaluate_answer():
 
     result = evaluate_answer_ai(
         answer,
-        question
+        question,
+        role=role,
+        difficulty=difficulty
     )
 
     score = result.get(
@@ -604,6 +630,17 @@ def evaluate_answer():
         cursor.close()
         conn.close()
 
+        for key in (
+            'interview_role',
+            'interview_domain',
+            'interview_difficulty',
+            'interview_question_number',
+            'interview_scores',
+            'interview_questions',
+            'current_question'
+        ):
+            session.pop(key, None)
+
 
         return render_template(
             'interview/final_result.html',
@@ -687,5 +724,10 @@ def evaluate_answer():
         previous_improvements=result.get(
             'improvements',
             []
+        ),
+
+        previous_rubric=result.get(
+            'rubric',
+            {}
         )
     )

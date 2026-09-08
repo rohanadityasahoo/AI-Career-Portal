@@ -12,7 +12,7 @@ Interview Question | CareerPilot AI
 
         <div class="col-lg-8">
 
-            <div class="card shadow-sm border-0">
+            <div class="card shadow-sm border-0 interview-session-card">
 
                 <div class="card-body p-4">
 
@@ -21,13 +21,13 @@ Interview Question | CareerPilot AI
                     <div class="d-flex justify-content-between
                                 align-items-center mb-3">
 
-                        <span class="badge bg-primary">
+                        <span class="badge interview-role-badge">
 
                             {{ role|replace('_', ' ')|title }}
 
                         </span>
 
-                        <span class="text-muted">
+                        <span class="interview-question-count">
 
                             Question {{ question_number }}
                             of
@@ -46,6 +46,9 @@ Interview Question | CareerPilot AI
                         <div
                             class="progress-bar"
                             role="progressbar"
+                            aria-valuenow="{{ question_number }}"
+                            aria-valuemin="0"
+                            aria-valuemax="{{ total_questions }}"
                             style="width: {{ (question_number / total_questions) * 100 }}%;">
 
                         </div>
@@ -53,26 +56,27 @@ Interview Question | CareerPilot AI
                     </div>
 
 
-                    <h2 class="mb-3">
-                        AI Mock Interview
-                    </h2>
+                    <h1 class="h3 fw-bold mb-1">
+                        Your next interview question
+                    </h1>
 
 
-                    <p class="text-muted">
-
-                        Difficulty:
-                        <strong>
-                            {{ difficulty|title }}
-                        </strong>
-
+                    <p class="text-muted mb-4">
+                        {{ domain }} · {{ difficulty|title }} difficulty
                     </p>
+
+                    {% if error %}
+                    <div class="alert alert-danger" role="alert">
+                        {{ error }}
+                    </div>
+                    {% endif %}
 
 
                     <!-- Previous Score -->
 
                     {% if previous_score is defined %}
 
-                    <div class="alert alert-success">
+                    <div class="alert alert-success interview-feedback-alert">
 
                         Previous answer score:
 
@@ -87,7 +91,7 @@ Interview Question | CareerPilot AI
 
                     {% if previous_feedback is defined and previous_feedback %}
 
-                    <div class="alert alert-info">
+                    <div class="alert alert-info interview-feedback-alert">
 
                         <strong>
                             Feedback on your previous answer:
@@ -112,7 +116,7 @@ Interview Question | CareerPilot AI
 
                             <div class="border rounded p-3 h-100">
 
-                                <h6 class="text-success">
+                                <h6 class="text-success fw-bold">
                                     What you did well
                                 </h6>
 
@@ -134,7 +138,7 @@ Interview Question | CareerPilot AI
 
                             <div class="border rounded p-3 h-100">
 
-                                <h6 class="text-primary">
+                                <h6 class="text-primary fw-bold">
                                     Try next time
                                 </h6>
 
@@ -155,17 +159,60 @@ Interview Question | CareerPilot AI
                     {% endif %}
 
 
+                    {% if previous_rubric %}
+
+                    {% set rubric_maximums = {
+                        'Relevance': 30,
+                        'Depth': 20,
+                        'Evidence': 20,
+                        'Structure': 20,
+                        'Clarity': 10
+                    } %}
+
+                    <div class="interview-rubric mb-4">
+
+                        <h2 class="h6 fw-bold mb-3">
+                            How the previous answer was assessed
+                        </h2>
+
+                        {% for criterion, points in previous_rubric.items() %}
+                        {% set maximum = rubric_maximums[criterion] %}
+
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between small mb-1">
+                                <span>{{ criterion }}</span>
+                                <span class="text-muted">{{ points }}/{{ maximum }}</span>
+                            </div>
+
+                            <div class="progress" style="height: 6px;">
+                                <div class="progress-bar"
+                                     role="progressbar"
+                                     aria-valuenow="{{ points }}"
+                                     aria-valuemin="0"
+                                     aria-valuemax="{{ maximum }}"
+                                     style="width: {{ (points / maximum) * 100 }}%;">
+                                </div>
+                            </div>
+                        </div>
+
+                        {% endfor %}
+
+                    </div>
+
+                    {% endif %}
+
+
                     <!-- Question -->
 
-                    <div class="alert alert-primary mt-4">
+                    <div class="interview-question-card mt-4">
 
-                        <h5 class="mb-2">
+                        <span class="interview-eyebrow">
                             Question {{ question_number }}
-                        </h5>
+                        </span>
 
-                        <p class="mb-0 fs-5">
+                        <h2 class="h4 mb-0 mt-2">
                             {{ question }}
-                        </p>
+                        </h2>
 
                     </div>
 
@@ -175,40 +222,59 @@ Interview Question | CareerPilot AI
                     <form method="POST"
                           action="{{ url_for('interview.evaluate_answer') }}">
 
-                        <div class="mb-4">
+                        <div class="mb-2">
 
-                            <label for="answer"
-                                   class="form-label fw-semibold">
+                            <div class="d-flex justify-content-between align-items-center gap-3">
+                                <label for="answer"
+                                       class="form-label fw-semibold mb-0">
 
-                                Your Answer
+                                    Your answer
 
-                            </label>
+                                </label>
+
+                                <span id="answer-word-count"
+                                      class="small text-muted"
+                                      aria-live="polite">
+                                    0 words
+                                </span>
+                            </div>
 
                             <textarea
                                 id="answer"
                                 name="answer"
                                 class="form-control"
+                                data-interview-answer
                                 rows="8"
-                                placeholder="Type your answer here..."
+                                placeholder="Give a direct answer, explain your approach, and add a relevant example..."
                                 required></textarea>
 
                         </div>
 
+                        <p id="answer-guidance" class="form-text mb-4">
+                            Tip: aim for at least 50 words when explaining a skill, decision, or experience.
+                        </p>
 
-                        <button type="submit"
-                                class="btn btn-success">
+                        <div class="d-flex flex-column flex-sm-row gap-2">
+                            <button type="submit"
+                                    class="btn btn-primary px-4">
 
-                            {% if question_number == total_questions %}
+                                {% if question_number == total_questions %}
 
-                                Finish Interview
+                                    Finish interview
 
-                            {% else %}
+                                {% else %}
 
-                                Submit & Next Question
+                                    Submit & next question
 
-                            {% endif %}
+                                {% endif %}
 
-                        </button>
+                            </button>
+
+                            <a href="{{ url_for('interview.interview_home') }}"
+                               class="btn btn-outline-secondary">
+                                Start over
+                            </a>
+                        </div>
 
                     </form>
 

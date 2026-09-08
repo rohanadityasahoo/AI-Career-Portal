@@ -775,13 +775,60 @@ def normalize_role(role):
     return normalize_domain(role)
 
 
-def get_question_pool(role, difficulty="medium"):
-    """
-    Return a shuffled interview question pool for the selected role.
+def _display_role(role):
+    return str(role or "your chosen role").replace("_", " ").title()
 
-    This function is kept compatible with routes/interview.py.
+
+def _role_specific_prompts(role):
+    """Create realistic prompts that make the interview specific to the role."""
+    role_label = _display_role(role)
+
+    return [
+        (
+            f"Describe a {role_label} project or practical assignment you "
+            "completed. What was the goal, what did you personally own, "
+            "which tools or methods did you use, and what was the result?"
+        ),
+        (
+            f"Imagine an important {role_label} task is not producing the "
+            "expected result. How would you investigate the issue, decide "
+            "on a solution, and confirm that the solution worked?"
+        ),
+        (
+            f"A high-priority {role_label} deliverable is at risk close to "
+            "a deadline. How would you prioritise the work, communicate "
+            "the risk, and protect the quality of the final outcome?"
+        )
+    ]
+
+
+def _unique_questions(questions, fallback_questions, total=5):
+    """Keep each interview session to distinct questions without losing length."""
+    selected = []
+    seen = set()
+
+    for question in questions + fallback_questions:
+        key = question.strip().lower()
+        if key in seen:
+            continue
+
+        seen.add(key)
+        selected.append(question)
+
+        if len(selected) == total:
+            break
+
+    return selected
+
+
+def get_question_pool(role, difficulty="medium", domain=None):
     """
-    domain = normalize_role(role)
+    Build a balanced five-question interview for the selected role.
+
+    The optional domain keeps this compatible with the wider role mapping in
+    ``routes/interview.py`` while allowing role-specific scenario prompts.
+    """
+    domain = domain or normalize_role(role)
 
     question_bank = INTERVIEW_QUESTIONS.get(
         domain,
@@ -810,26 +857,36 @@ def get_question_pool(role, difficulty="medium"):
     random.shuffle(technical)
     random.shuffle(hr)
 
-    # Medium is the balanced default.
+    role_prompts = _role_specific_prompts(role)
+
+    # Each difficulty uses a deliberate mix instead of merely taking the
+    # first available questions from a shuffled list.
     if difficulty == "easy":
-        selected = technical[:1] + hr[:2]
+        selected = [
+            hr[0],
+            role_prompts[0],
+            technical[0],
+            hr[1],
+            role_prompts[1]
+        ]
     elif difficulty == "hard":
-        selected = technical[:3] + hr[:1]
+        selected = [
+            technical[0],
+            technical[1],
+            role_prompts[2],
+            technical[2],
+            hr[0]
+        ]
     else:
-        selected = technical[:2] + hr[:1]
+        selected = [
+            technical[0],
+            role_prompts[0],
+            technical[1],
+            role_prompts[1],
+            hr[0]
+        ]
 
-    random.shuffle(selected)
-
-    # Make sure the session has enough questions.
-    if len(selected) < 5:
-        fallback = technical + hr
-        for question in fallback:
-            if question not in selected:
-                selected.append(question)
-            if len(selected) >= 5:
-                break
-
-    return selected
+    return _unique_questions(selected, technical + hr, total=5)
 
 
 def generate_question(role, difficulty="medium"):
@@ -842,82 +899,198 @@ def generate_question(role, difficulty="medium"):
     return random.choice(pool)
 
 
-def _answer_quality_score(answer):
-    """
-    Evaluate answer quality without requiring another external API/model.
+QUESTION_STOP_WORDS = {
+    "about", "after", "before", "could", "does", "explain", "from",
+    "have", "into", "most", "should", "tell", "that", "their", "them",
+    "then", "this", "what", "when", "where", "which", "while", "with",
+    "would", "your", "yourself"
+}
 
-    The score considers:
-    - answer length
-    - useful explanatory words
-    - examples/evidence
-    - structure
-    - filler-only answers
-    """
-    if not answer:
-        return 0
+ACTION_WORDS = {
+    "analyzed", "built", "created", "debugged", "delivered", "designed",
+    "developed", "implemented", "improved", "led", "managed", "measured",
+    "organized", "resolved", "solved", "tested", "worked"
+}
 
+REASONING_CUES = {
+    "because", "therefore", "however", "approach", "process", "reason",
+    "first", "then", "finally", "so", "while", "whereas"
+}
+
+EVIDENCE_CUES = {
+    "for example", "for instance", "in my project", "in my experience",
+    "i built", "i created", "i developed", "i implemented", "i worked",
+    "result", "impact", "increased", "improved", "reduced", "saved"
+}
+
+STAR_CUES = {
+    "situation", "task", "action", "result", "challenge", "outcome",
+    "responsibility", "goal"
+}
+
+FILLER_RESPONSES = {
+    "yes", "no", "okay", "good", "fine", "maybe", "nothing", "dont",
+    "don't", "idk", "i dont know", "i don't know", "not sure"
+}
+
+
+def _tokenize(text):
+    return re.findall(r"\b[\w+#.-]+\b", str(text).lower())
+
+
+def _contains_any(text, phrases):
+    return any(phrase in text for phrase in phrases)
+
+
+def _question_keywords(question):
+    return {
+        word for word in _tokenize(question)
+        if len(word) >= 4 and word not in QUESTION_STOP_WORDS
+    }
+
+
+def _is_experience_question(question):
+    prompt = str(question or "").lower()
+    return any(
+        phrase in prompt
+        for phrase in [
+            "tell me about", "describe", "project", "experience",
+            "time when", "challenge", "worked", "handled", "solved"
+        ]
+    )
+
+
+def _score_answer_rubric(answer, question=None):
+    """Score an answer against a consistent interview-practice rubric."""
     text = str(answer).strip()
-    words = re.findall(r"\b[\w+#.-]+\b", text.lower())
+    lower = text.lower()
+    words = _tokenize(text)
     word_count = len(words)
 
-    if word_count == 0:
-        return 0
+    if not words:
+        return {
+            "Relevance": 0,
+            "Depth": 0,
+            "Evidence": 0,
+            "Structure": 0,
+            "Clarity": 0,
+            "score": 0
+        }
 
-    score = 0
+    if lower in FILLER_RESPONSES:
+        return {
+            "Relevance": 2,
+            "Depth": 1,
+            "Evidence": 0,
+            "Structure": 1,
+            "Clarity": 1,
+            "score": 5
+        }
 
-    # Length / completeness.
-    if word_count >= 120:
-        score += 30
-    elif word_count >= 80:
-        score += 25
-    elif word_count >= 50:
-        score += 20
-    elif word_count >= 25:
-        score += 14
-    elif word_count >= 10:
-        score += 8
+    question_terms = _question_keywords(question)
+    answer_terms = set(words)
+    matched_terms = question_terms.intersection(answer_terms)
+    experience_question = _is_experience_question(question)
+
+    # Relevance (30): assess whether the response addresses this specific prompt.
+    if question_terms:
+        relevance = min(
+            18,
+            round(18 * len(matched_terms) / min(len(question_terms), 4))
+        )
     else:
-        score += 3
+        relevance = 15
 
-    # Explanation / reasoning language.
-    explanation_words = {
-        "because", "therefore", "however", "first", "then",
-        "finally", "reason", "approach", "process", "result",
-        "solution", "problem", "challenge", "implemented",
-        "developed", "managed", "analyzed", "improved"
+    if experience_question:
+        if re.search(r"\b(i|my|we|our)\b", lower):
+            relevance += 5
+        if answer_terms.intersection(ACTION_WORDS):
+            relevance += 5
+    elif _contains_any(lower, {"is", "means", "because", "works", "used"}):
+        relevance += 5
+
+    if "difference" in str(question or "").lower() and _contains_any(
+        lower, {"while", "whereas", "difference", "compared"}
+    ):
+        relevance += 4
+
+    relevance = min(relevance, 30)
+
+    # Depth (20): reward sufficient detail but cap the gain from verbosity.
+    if word_count >= 100:
+        depth = 20
+    elif word_count >= 70:
+        depth = 17
+    elif word_count >= 45:
+        depth = 14
+    elif word_count >= 25:
+        depth = 10
+    elif word_count >= 12:
+        depth = 6
+    else:
+        depth = 2
+
+    # Evidence (20): examples, ownership, measurable impact, and concrete action.
+    evidence = 0
+    if _contains_any(lower, EVIDENCE_CUES):
+        evidence += 7
+    if re.search(r"\b\d+(?:\.\d+)?(?:%|x)?\b", lower):
+        evidence += 5
+    if answer_terms.intersection(ACTION_WORDS):
+        evidence += 4
+    if _contains_any(lower, {"project", "team", "customer", "user", "client"}):
+        evidence += 4
+    evidence = min(evidence, 20)
+
+    # Structure (20): look for a readable explanation or a STAR-style story.
+    sentence_count = len([
+        sentence for sentence in re.split(r"[.!?]+", text) if sentence.strip()
+    ])
+    structure = 0
+    if sentence_count >= 2:
+        structure += 4
+    if sentence_count >= 3:
+        structure += 2
+    structure += min(7, len(answer_terms.intersection(REASONING_CUES)) * 2)
+    structure += min(7, len(answer_terms.intersection(STAR_CUES)) * 2)
+    structure = min(structure, 20)
+
+    # Clarity (10): concise sentences and varied vocabulary are easier to follow.
+    unique_ratio = len(set(words)) / word_count
+    clarity = 2
+    if unique_ratio >= 0.55:
+        clarity += 4
+    elif unique_ratio >= 0.4:
+        clarity += 2
+    if sentence_count >= 2:
+        clarity += 2
+    if not re.search(r"\b(umm+|uhh+|basically|whatever)\b", lower):
+        clarity += 2
+    clarity = min(clarity, 10)
+
+    score = relevance + depth + evidence + structure + clarity
+
+    # Long but off-topic answers should never receive an interview-ready score.
+    if question_terms and relevance < 10 and word_count >= 20:
+        score = min(score, 45)
+    if word_count < 10:
+        score = min(score, 25)
+    if _contains_any(lower, {"i don't know", "not sure", "no idea"}):
+        score = min(score, 20)
+
+    return {
+        "Relevance": relevance,
+        "Depth": depth,
+        "Evidence": evidence,
+        "Structure": structure,
+        "Clarity": clarity,
+        "score": max(0, min(100, round(score)))
     }
 
-    score += min(
-        20,
-        sum(2 for word in explanation_words if word in words)
-    )
 
-    # Evidence / examples.
-    evidence_words = {
-        "example", "for example", "project", "experience",
-        "result", "impact", "improved", "increased", "reduced"
-    }
-
-    score += min(
-        20,
-        sum(3 for phrase in evidence_words if phrase in text.lower())
-    )
-
-    # Structured answers are generally easier to evaluate.
-    if any(marker in text for marker in [".", ",", ":", ";"]):
-        score += 10
-
-    # Avoid rewarding very short repeated/filler answers.
-    filler_words = {
-        "yes", "no", "okay", "good", "fine", "maybe",
-        "nothing", "dont", "don't", "idk", "i dont know",
-        "i don't know"
-    }
-
-    if text.lower() in filler_words:
-        return 5
-
-    return min(score, 100)
+def _answer_quality_score(answer):
+    """Backward-compatible shortcut for callers that only need a score."""
+    return _score_answer_rubric(answer)["score"]
 
 
 def evaluate_answer(answer, question=None, role=None, difficulty=None):
@@ -945,81 +1118,37 @@ def evaluate_answer(answer, question=None, role=None, difficulty=None):
         }
 
     text = str(answer).strip()
-    score = _answer_quality_score(text)
+    rubric = _score_answer_rubric(text, question)
+    score = rubric["score"]
 
     strengths = []
     improvements = []
 
-    word_count = len(re.findall(r"\b[\w+#.-]+\b", text))
-
-    if word_count >= 50:
-        strengths.append("Your answer provides reasonable detail.")
+    if rubric["Relevance"] >= 20:
+        strengths.append("You addressed the main point of the question.")
     else:
-        improvements.append(
-            "Give a more detailed answer with explanation and context."
-        )
+        improvements.append("Answer the exact question first before adding background detail.")
 
-    lower = text.lower()
-
-    if any(
-        phrase in lower
-        for phrase in [
-            "for example",
-            "for instance",
-            "my project",
-            "in my experience",
-            "i worked",
-            "i developed",
-            "i implemented"
-        ]
-    ):
-        strengths.append("You supported your answer with practical context.")
+    if rubric["Depth"] >= 14:
+        strengths.append("Your answer contains useful supporting detail.")
     else:
-        improvements.append(
-            "Include a practical example from your project, study, or experience."
-        )
+        improvements.append("Add context and explain the steps behind your answer.")
 
-    if any(
-        word in lower.split()
-        for word in ["because", "therefore", "reason", "approach", "process"]
-    ):
-        strengths.append("Your answer shows reasoning rather than only stating facts.")
+    if rubric["Evidence"] >= 10:
+        strengths.append("You supported your answer with concrete evidence or experience.")
     else:
-        improvements.append(
-            "Explain why you chose your approach, not only what you did."
-        )
+        improvements.append("Include a specific example, action you took, or measurable result.")
 
-    # Optional question-aware relevance check.
-    if question:
-        question_words = set(
-            re.findall(r"\b[a-zA-Z]{4,}\b", str(question).lower())
-        )
-        stop_words = {
-            "what", "when", "where", "which", "would", "could",
-            "should", "have", "your", "tell", "about", "does",
-            "this", "that", "with", "from", "they", "them",
-            "into", "been", "were", "will", "most"
-        }
-        meaningful = question_words - stop_words
+    if rubric["Structure"] >= 10:
+        strengths.append("Your answer has a clear, easy-to-follow structure.")
+    else:
+        improvements.append("Use a simple structure: situation, action, and result—or claim, reason, and example.")
 
-        if meaningful:
-            answer_words = set(
-                re.findall(r"\b[a-zA-Z]{4,}\b", lower)
-            )
-            overlap = meaningful.intersection(answer_words)
+    if rubric["Clarity"] < 6:
+        improvements.append("Use short, complete sentences and avoid filler words.")
 
-            relevance_ratio = len(overlap) / len(meaningful)
-
-            if relevance_ratio >= 0.30:
-                score = min(100, score + 10)
-                strengths.append("Your answer appears relevant to the question.")
-            elif relevance_ratio < 0.10:
-                score = max(0, score - 10)
-                improvements.append(
-                    "Stay more directly focused on what the question asks."
-                )
-
-    score = max(0, min(100, round(score)))
+    strengths = strengths[:3]
+    improvements = improvements[:3]
 
     if score >= 80:
         feedback = (
@@ -1046,5 +1175,10 @@ def evaluate_answer(answer, question=None, role=None, difficulty=None):
         "score": score,
         "feedback": feedback,
         "strengths": strengths,
-        "improvements": improvements
+        "improvements": improvements,
+        "rubric": {
+            name: value
+            for name, value in rubric.items()
+            if name != "score"
+        }
     }
