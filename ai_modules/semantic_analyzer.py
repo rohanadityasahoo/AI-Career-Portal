@@ -1,51 +1,35 @@
-from sentence_transformers import SentenceTransformer
-from sklearn.metrics.pairwise import cosine_similarity
+import gc
+from ai_modules.ai_resume_analyzer import encode_texts
 
 
-# Load the pretrained NLP model once
-model = SentenceTransformer(
-    "sentence-transformers/all-MiniLM-L6-v2"
-)
+def calculate_semantic_similarity(resume_text, job_description):
+  """Calculate semantic similarity between resume text and job description.
 
+  Returns a score between 0 and 100.
+  """
+  if not resume_text or not resume_text.strip():
+    return 0.0
 
-def calculate_semantic_similarity(
-    resume_text,
-    job_description
-):
-    """
-    Calculate semantic similarity between
-    resume text and job description.
+  if not job_description or not job_description.strip():
+    return 0.0
 
-    Returns a score between 0 and 100.
-    """
+  # Generate normalized embeddings using the shared singleton model
+  embeddings = encode_texts([resume_text, job_description])
 
-    if not resume_text.strip():
-        return 0.0
+  if len(embeddings) < 2:
+    return 0.0
 
-    if not job_description.strip():
-        return 0.0
+  resume_embedding = embeddings[0]
+  job_embedding = embeddings[1]
 
-    # Convert both texts into AI embeddings
-    resume_embedding = model.encode(
-        [resume_text],
-        convert_to_numpy=True
-    )
+  # Because embeddings are normalized, dot product equals cosine similarity
+  similarity = float(resume_embedding @ job_embedding)
 
-    job_embedding = model.encode(
-        [job_description],
-        convert_to_numpy=True
-    )
+  # Convert cosine similarity (-1 to 1) into a 0 to 100 percentage
+  score = similarity * 100
 
-    # Calculate cosine similarity
-    similarity = cosine_similarity(
-        resume_embedding,
-        job_embedding
-    )[0][0]
+  # Clean up temporary references
+  del embeddings, resume_embedding, job_embedding
+  gc.collect()
 
-    # Convert 0-1 similarity to 0-100
-    score = similarity * 100
-
-    # Keep score within 0-100
-    score = max(0, min(score, 100))
-
-    return round(float(score), 2)
+  return round(float(max(0.0, min(100.0, score))), 2)

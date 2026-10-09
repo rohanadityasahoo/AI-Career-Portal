@@ -1,97 +1,90 @@
-from flask import Blueprint, render_template, session, redirect
-from database.db import get_db_connection, ensure_career_roadmaps_table
+from database.db import ensure_career_roadmaps_table, get_db_connection
+from flask import Blueprint, render_template, session
+from routes.auth import login_required
 
 dashboard = Blueprint('dashboard', __name__)
 
 
 @dashboard.route('/dashboard')
+@login_required
 def dashboard_home():
+  student_id = session['student_id']
 
-    if 'student_id' not in session:
-        return redirect('/login')
+  conn = get_db_connection()
+  try:
+    with conn.cursor() as cursor:
+      # -----------------------------
+      # Resume Statistics
+      # -----------------------------
+      cursor.execute(
+          """
+                SELECT
+                    count(*) AS resume_count,
+                    coalesce(max(ats_score), 0) AS best_ats
+                FROM resume_analysis
+                WHERE student_id = %s
+                """,
+          (student_id,),
+      )
+      resume_stats = cursor.fetchone() or {'resume_count': 0, 'best_ats': 0}
 
-    student_id = session['student_id']
+      # -----------------------------
+      # Interview Statistics
+      # -----------------------------
+      cursor.execute(
+          """
+                SELECT
+                    count(*) AS interview_count,
+                    coalesce(max(average_score), 0) AS best_interview_score,
+                    coalesce(avg(average_score), 0) AS average_interview_score,
+                    coalesce(
+                        (
+                            SELECT average_score
+                            FROM interview_results
+                            WHERE student_id = %s
+                            ORDER BY created_at DESC, interview_id DESC
+                            LIMIT 1
+                        ),
+                        0
+                    ) AS latest_interview_score
+                FROM interview_results
+                WHERE student_id = %s
+                """,
+          (student_id, student_id),
+      )
+      interview_stats = cursor.fetchone() or {
+          'interview_count': 0,
+          'best_interview_score': 0,
+          'average_interview_score': 0,
+          'latest_interview_score': 0,
+      }
 
-    conn = get_db_connection()
-    cursor = conn.cursor()
+      # -----------------------------
+      # Roadmap Statistics
+      # -----------------------------
+      ensure_career_roadmaps_table(cursor)
 
-    # -----------------------------
-    # Resume Statistics
-    # -----------------------------
+      cursor.execute(
+          """
+                SELECT count(*) AS roadmap_count
+                FROM career_roadmaps
+                WHERE student_id = %s
+                """,
+          (student_id,),
+      )
+      roadmap_stats = cursor.fetchone() or {'roadmap_count': 0}
 
-    cursor.execute(
-        """
-        select
-            count(*) as resume_count,
-            coalesce(max(ats_score), 0) as best_ats
-        from resume_analysis
-        where student_id = %s
-        """,
-        (student_id,)
-    )
-
-    resume_stats = cursor.fetchone()
-
-    # -----------------------------
-    # Interview Statistics
-    # -----------------------------
-
-    cursor.execute(
-        """
-        select
-            count(*) as interview_count,
-            coalesce(max(average_score), 0) as best_interview_score,
-            coalesce(avg(average_score), 0) as average_interview_score,
-            coalesce(
-                (
-                    select average_score
-                    from interview_results
-                    where student_id = %s
-                    order by created_at desc, interview_id desc
-                    limit 1
-                ),
-                0
-            ) as latest_interview_score
-        from interview_results
-        where student_id = %s
-        """,
-        (student_id, student_id)
-    )
-
-    interview_stats = cursor.fetchone()
-
-    # -----------------------------
-    # Roadmap Statistics
-    # -----------------------------
-
-    ensure_career_roadmaps_table(cursor)
-
-    cursor.execute(
-        """
-        select count(*) as roadmap_count
-        from career_roadmaps
-        where student_id = %s
-        """,
-        (student_id,)
-    )
-
-    roadmap_stats = cursor.fetchone()
-
-    # -----------------------------
-    # Close Database
-    # -----------------------------
-
-    cursor.close()
+  finally:
     conn.close()
 
-    return render_template(
-        'dashboard/index.html',
-        student_name=session.get('student_name'),
-        resume_count=resume_stats['resume_count'],
-        best_ats=resume_stats['best_ats'],
-        interview_count=interview_stats['interview_count'],
-        best_interview_score=interview_stats['best_interview_score'],
-        latest_interview_score=interview_stats['latest_interview_score'],
-        average_interview_score=interview_stats['average_interview_score'],
-        roadmap_count=roadmap_stats['roadmap_count']
-    )
+  return render_template(
+      'dashboard/index.html',
+      student_name=session.get('student_name', 'Student'),
+      resume_count=resume_stats['resume_count'],
+      best_ats=resume_stats['best_ats'],
+      interview_count=interview_stats['interview_count'],
+      best_interview_score=interview_stats['best_interview_score'],
+      latest_interview_score=interview_stats['latest_interview_score'],
+      average_interview_score=interview_stats['average_interview_score'],
+      roadmap_count=roadmap_stats['roadmap_count'],
+  )
