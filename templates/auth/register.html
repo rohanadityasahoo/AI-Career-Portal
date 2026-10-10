@@ -6,82 +6,125 @@ Register | CareerPilot AI
 
 {% block content %}
 
-<div class="container mt-5">
+<section class="auth-register-page py-4 py-lg-5">
+    <div class="container">
+        <div class="auth-register-shell mx-auto">
+            <div class="row g-0">
+                <aside class="col-lg-4 auth-register-aside">
+                    <div>
+                        <span class="auth-register-eyebrow">CareerPilot AI</span>
+                        <h1>Start with a clearer career direction.</h1>
+                        <p>Create your student workspace in a few minutes, then build a practical plan around the career you want.</p>
+                    </div>
 
-    <div class="row justify-content-center">
+                    <ol class="auth-register-steps">
+                        <li><span>1</span><div><strong>Create your account</strong><small>Start with your basic student details.</small></div></li>
+                        <li><span>2</span><div><strong>Set your direction</strong><small>Tell CareerPilot about your target role and goals.</small></div></li>
+                        <li><span>3</span><div><strong>Build evidence</strong><small>Use the tools to improve, practise, and track progress.</small></div></li>
+                    </ol>
 
-        <div class="col-md-6">
+                    <p class="auth-register-aside-note">Already have an account? <a href="{{ url_for('auth.login') }}">Sign in</a></p>
+                </aside>
 
-            <div class="card shadow">
+                <div class="col-lg-8 auth-register-main">
+                    <div class="auth-register-form-wrap">
+                        <span class="auth-register-kicker">Student registration</span>
+                        <h2>Create your account</h2>
+                        <p class="auth-register-intro">Fields marked <span aria-hidden="true">*</span> are required. You can complete the optional profile details now or later.</p>
 
-                <div class="card-body">
+                        {% if error %}
+                        <div class="alert alert-danger auth-register-alert" role="alert">{{ error }}</div>
+                        {% endif %}
 
-                    <h2 class="text-center mb-4">
-                        Student Registration
-                    </h2>
+                        <form method="POST" data-register-form>
+                            <div class="auth-register-section">
+                                <div class="auth-register-section-heading">
+                                    <span>01</span><div><h3>Your details</h3><p>Use the contact details associated with your student account.</p></div>
+                                </div>
+                                <div class="row g-3">
+                                    <div class="col-md-6 auth-register-field">
+                                        <label for="full_name">Full name <span>*</span></label>
+                                        <input id="full_name" type="text" name="full_name" class="form-control" value="{{ form_data.full_name|default('') }}" maxlength="100" autocomplete="name" required placeholder="Your full name">
+                                    </div>
+                                    <div class="col-md-6 auth-register-field">
+                                        <label for="email">Email address <span>*</span></label>
+                                        <input id="email" type="email" name="email" class="form-control" value="{{ form_data.email|default('') }}" maxlength="100" autocomplete="email" inputmode="email" required placeholder="you@example.com">
+                                    </div>
+                                    <div class="col-md-6 auth-register-field">
+                                        <label for="phone">Phone number <span>*</span></label>
+                                        <input id="phone" type="tel" name="phone" class="form-control" value="{{ form_data.phone|default('') }}" minlength="7" maxlength="20" autocomplete="tel" inputmode="tel" required placeholder="Your phone number">
+                                        <span class="auth-register-hint">7–15 digits; spaces and + are accepted.</span>
+                                    </div>
+                                    <div class="col-md-6 auth-register-field">
+                                        <label for="gender">Gender <em>Optional</em></label>
+                                        <select id="gender" name="gender" class="form-select">
+                                            <option value="">Prefer not to say</option>
+                                            <option value="Male" {% if form_data.gender == 'Male' %}selected{% endif %}>Male</option>
+                                            <option value="Female" {% if form_data.gender == 'Female' %}selected{% endif %}>Female</option>
+                                            <option value="Other" {% if form_data.gender == 'Other' %}selected{% endif %}>Other</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
 
-                    <form method="POST">
+                            <div class="auth-register-section">
+                                <div class="auth-register-section-heading">
+                                    <span>02</span><div><h3>Secure your account</h3><p>Choose a password you do not use elsewhere.</p></div>
+                                </div>
+                                <div class="row g-3">
+                                    <div class="col-md-6 auth-register-field">
+                                        <label for="password">Password <span>*</span></label>
+                                        <div class="auth-password-control">
+                                            <input id="password" type="password" name="password" class="form-control" minlength="8" autocomplete="new-password" required data-register-password placeholder="At least 8 characters">
+                                            <button class="auth-password-toggle" type="button" data-register-password-toggle data-password-target="password" aria-controls="password" aria-label="Show password">Show</button>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 auth-register-field">
+                                        <label for="password_confirmation">Confirm password <span>*</span></label>
+                                        <div class="auth-password-control">
+                                            <input id="password_confirmation" type="password" name="password_confirmation" class="form-control" minlength="8" autocomplete="new-password" required data-register-password-confirm placeholder="Re-enter your password">
+                                            <button class="auth-password-toggle" type="button" data-register-password-toggle data-password-target="password_confirmation" aria-controls="password_confirmation" aria-label="Show password">Show</button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="auth-password-guidance">
+                                    <div class="auth-password-meter" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+                                    <p data-password-guidance>Use 8+ characters with a mix of letters, numbers, and symbols.</p>
+                                </div>
+                                <p class="auth-password-match" data-password-match aria-live="polite"></p>
+                            </div>
 
-                        <div class="mb-3">
-                            <label>Full Name</label>
-                            <input type="text" name="full_name" class="form-control" required>
-                        </div>
+                            <div class="auth-register-section auth-register-optional">
+                                <div class="auth-register-section-heading">
+                                    <span>03</span><div><h3>Academic context</h3><p>Optional details make your starting guidance more relevant.</p></div>
+                                </div>
+                                <div class="row g-3">
+                                    <div class="col-md-6 auth-register-field">
+                                        <label for="college">College or university <em>Optional</em></label>
+                                        <input id="college" type="text" name="college" class="form-control" value="{{ form_data.college|default('') }}" maxlength="150" autocomplete="organization" placeholder="Your institution">
+                                    </div>
+                                    <div class="col-md-3 auth-register-field">
+                                        <label for="branch">Branch <em>Optional</em></label>
+                                        <input id="branch" type="text" name="branch" class="form-control" value="{{ form_data.branch|default('') }}" maxlength="100" placeholder="e.g. CSE">
+                                    </div>
+                                    <div class="col-md-3 auth-register-field">
+                                        <label for="year">Year <em>Optional</em></label>
+                                        <input id="year" type="number" name="year" class="form-control" value="{{ form_data.year|default('') }}" min="1" max="8" inputmode="numeric" placeholder="1–8">
+                                    </div>
+                                </div>
+                            </div>
 
-                        <div class="mb-3">
-                            <label>Email</label>
-                            <input type="email" name="email" class="form-control" required>
-                        </div>
+                            <button type="submit" class="btn btn-primary auth-register-submit" data-register-submit>
+                                <span>Create my account</span><span aria-hidden="true">→</span>
+                            </button>
+                        </form>
 
-                        <div class="mb-3">
-                            <label>Phone</label>
-                            <input type="text" name="phone" class="form-control" required>
-                        </div>
-
-                        <div class="mb-3">
-                            <label>Password</label>
-                            <input type="password" name="password" class="form-control" required>
-                        </div>
-
-                        <div class="mb-3">
-                            <label>Gender</label>
-                            <select name="gender" class="form-control">
-                                <option value="">Select Gender</option>
-                                <option value="Male">Male</option>
-                                <option value="Female">Female</option>
-                                <option value="Other">Other</option>
-                            </select>
-                        </div>
-
-                        <div class="mb-3">
-                            <label>College</label>
-                            <input type="text" name="college" class="form-control">
-                        </div>
-
-                        <div class="mb-3">
-                            <label>Branch</label>
-                            <input type="text" name="branch" class="form-control">
-                        </div>
-
-                        <div class="mb-3">
-                            <label>Year</label>
-                            <input type="number" name="year" class="form-control">
-                        </div>
-
-                        <button type="submit"
-                                class="btn btn-primary w-100">
-                            Register
-                        </button>
-
-                    </form>
-
+                        <p class="auth-register-login">Already registered? <a href="{{ url_for('auth.login') }}">Sign in to your account</a></p>
+                    </div>
                 </div>
-
             </div>
-
         </div>
-
     </div>
-
-</div>
+</section>
 
 {% endblock %}

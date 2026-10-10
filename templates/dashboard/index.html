@@ -1,238 +1,224 @@
 {% extends "layouts/base.html" %}
 
-{% block title %}
-Dashboard
-{% endblock %}
+{% block title %}Career Dashboard | CareerPilot AI{% endblock %}
 
 {% block content %}
-
-<div class="container-fluid py-4">
-
-    <div class="row g-0">
-
-        <!-- ========================= -->
-        <!-- Sidebar -->
-        <!-- ========================= -->
-
-        <div class="col-lg-2 col-md-3 mb-4">
-
-            <div class="card shadow-sm h-100 dashboard-quick-actions">
-
-                <div class="card-body p-3">
-
-                    <h6 class="quick-actions-title fw-bold text-uppercase mb-4">
-                        Quick Actions
-                    </h6>
-
-                    <!-- Profile -->
-                    <a href="/profile"
-                    class="btn quick-action w-100 text-start mb-3 py-3">
-
-                        <span class="fw-semibold">
-                            Profile
-                        </span>
-
-                    </a>
-
-                    
-                    <!-- Resume Analyzer -->
-                    <a href="/resume"
-                       class="btn quick-action w-100 text-start mb-3 py-3">
-
-                        <span class="fw-semibold">
-                            Resume Analyzer
-                        </span>
-
-                    </a>
-
-
-                    <!-- AI Interview -->
-                    <a href="/interview"
-                       class="btn quick-action w-100 text-start mb-3 py-3">
-
-                        <span class="fw-semibold">
-                            AI Interview
-                        </span>
-
-                    </a>
-
-                    <!-- Interview History -->
-                    <a href="{{ url_for('interview.interview_history') }}"
-                       class="btn quick-action w-100 text-start mb-3 py-3">
-
-                        <span class="fw-semibold">
-                            Interview History
-                        </span>
-
-                    </a>
-
-
-                    <!-- Career Roadmap -->
-                    <a href="{{ url_for('roadmap.roadmap_page') }}"
-                       class="btn quick-action w-100 text-start mb-3 py-3">
-
-                        <span class="fw-semibold">
-                            Career Roadmap
-                        </span>
-
-                    </a>
-
-
-                    <!-- AI Chatbot -->
-                    <a href="/chatbot"
-                       class="btn quick-action w-100 text-start py-3">
-
-                        <span class="fw-semibold">
-                            AI Chatbot
-                        </span>
-
-                    </a>
-
+<div class="career-dashboard-page">
+    <div class="container py-5">
+        <header class="career-dashboard-hero">
+            <div class="row align-items-end g-4">
+                <div class="col-lg-8">
+                    <div class="dashboard-eyebrow">Career command centre</div>
+                    <h1>Welcome back, {{ student_name }}.</h1>
+                    {% if progress.profile.target_role %}
+                    <p class="mb-0">You’re building toward <strong>{{ progress.profile.target_role }}</strong>. Pick one focused action below and keep your momentum moving.</p>
+                    {% else %}
+                    <p class="mb-0">Bring your profile, resume, practice, and learning plan together in one focused career workflow.</p>
+                    {% endif %}
                 </div>
-
+                <div class="col-lg-4">
+                    <div class="dashboard-hero-progress">
+                        <span>Preparation progress</span>
+                        <strong>{{ progress.completion_score }}%</strong>
+                        <div class="progress" role="progressbar" aria-label="Career preparation progress" aria-valuenow="{{ progress.completion_score }}" aria-valuemin="0" aria-valuemax="100">
+                            <div class="progress-bar" style="width: {{ progress.completion_score }}%"></div>
+                        </div>
+                        <small>{{ progress.milestones|selectattr('complete')|list|length }} of {{ progress.milestones|length }} foundations completed</small>
+                    </div>
+                </div>
             </div>
+        </header>
 
-        </div>
-
-
-        <!-- ========================= -->
-        <!-- Main Dashboard -->
-        <!-- ========================= -->
-
-        <div class="col-lg-10 col-md-9">
-
-            <div class="px-lg-4">
-
-                <!-- Welcome -->
-                <div class="mb-4">
-
-                    <h2 class="fw-bold mb-2">
-                        Welcome, {{ student_name }}
-                    </h2>
-
-                    <p class="text-muted mb-0">
-                        Track your career preparation and progress.
-                    </p>
-
-                    <hr>
-
-                </div>
-
-
-                <!-- ========================= -->
-                <!-- Statistics -->
-                <!-- ========================= -->
-
-                <div class="row g-4">
-
-
-                    <!-- Resume Analyses -->
-                    <div class="col-12 col-sm-6 col-xl-3">
-
-                        <div class="card shadow-sm h-100">
-
-                            <div class="card-body text-center py-4">
-
-                                <h6 class="text-muted mb-3">
-                                    Resume Analyses
-                                </h6>
-
-                                <h2 class="fw-bold mb-0">
-                                    {{ resume_count }}
-                                </h2>
-
-                            </div>
-
-                        </div>
-
-                    </div>
-
-
-                    <!-- Best ATS -->
-                    <div class="col-12 col-sm-6 col-xl-3">
-
-                        <div class="card shadow-sm h-100">
-
-                            <div class="card-body text-center py-4">
-
-                                <h6 class="text-muted mb-3">
-                                    Best ATS
-                                </h6>
-
-                                <h2 class="fw-bold mb-0">
-                                    {{ "%.2f"|format(best_ats) }}%
-                                </h2>
-
-                            </div>
-
-                        </div>
-
-                    </div>
-
-
-                    <!-- Interviews -->
-                    <div class="col-12 col-sm-6 col-xl-3">
-
-                        <div class="card shadow-sm h-100">
-
-                            <div class="card-body text-center py-4">
-
-                                <h6 class="text-muted mb-3">
-                                    Interviews
-                                </h6>
-
-                                <h2 class="fw-bold mb-0">
-                                    {{ interview_count }}
-                                </h2>
-
-                                <small class="text-muted d-block mt-2">
-                                    Best: {{ "%.2f"|format(best_interview_score) }}/100
-                                </small>
-
-                                <small class="text-muted d-block">
-                                    Latest: {{ "%.2f"|format(latest_interview_score) }}/100
-                                </small>
-
-                                <small class="text-muted d-block">
-                                    Average: {{ "%.2f"|format(average_interview_score) }}/100
-                                </small>
-
-                            </div>
-
-                        </div>
-
-                    </div>
-
-
-                    <!-- Roadmaps -->
-                    <div class="col-12 col-sm-6 col-xl-3">
-
-                        <div class="card shadow-sm h-100">
-
-                            <div class="card-body text-center py-4">
-
-                                <h6 class="text-muted mb-3">
-                                    Roadmaps
-                                </h6>
-
-                                <h2 class="fw-bold mb-0">
-                                    {{ roadmap_count }}
-                                </h2>
-
-                            </div>
-
-                        </div>
-
-                    </div>
-
-                </div>
-
+        <section class="row g-3 mt-1" aria-label="Career preparation summary">
+            <div class="col-6 col-xl">
+                <article class="dashboard-stat-card dashboard-stat-primary h-100">
+                    <strong class="dashboard-stat-value dashboard-stat-profile">Profile</strong>
+                    <a href="{{ url_for('profile.student_profile') }}">Edit / View profile <span aria-hidden="true">→</span></a>
+                </article>
             </div>
+            <div class="col-6 col-xl">
+                <article class="dashboard-stat-card h-100">
+                    <span class="dashboard-stat-label">Resume reviews</span>
+                    <strong class="dashboard-stat-value">{{ progress.resume.count }}</strong>
+                    {% if progress.resume.latest_score is not none %}
+                    <span class="dashboard-stat-caption">Latest signal: {{ progress.resume.latest_score }}/100</span>
+                    {% else %}
+                    <span class="dashboard-stat-caption">No review yet</span>
+                    {% endif %}
+                    <a href="{{ url_for('resume.resume_home') }}">Review resume <span aria-hidden="true">→</span></a>
+                </article>
+            </div>
+            <div class="col-6 col-xl">
+                <article class="dashboard-stat-card h-100">
+                    <span class="dashboard-stat-label">Interview practice</span>
+                    <strong class="dashboard-stat-value">{{ progress.interview.count }}</strong>
+                    {% if progress.interview.average_score is not none %}
+                    <span class="dashboard-stat-caption">Average: {{ progress.interview.average_score }}/100</span>
+                    {% else %}
+                    <span class="dashboard-stat-caption">No sessions yet</span>
+                    {% endif %}
+                    <a href="{{ url_for('interview.interview_home') }}">Start practice <span aria-hidden="true">→</span></a>
+                </article>
+            </div>
+            <div class="col-6 col-xl">
+                <article class="dashboard-stat-card dashboard-roadmap-card h-100">
+                    <strong class="dashboard-stat-value dashboard-stat-roadmap">Career Roadmap</strong>
+                    <a href="{{ url_for('roadmap.roadmap_page') }}">Open roadmap <span aria-hidden="true">→</span></a>
+                </article>
+            </div>
+            <div class="col-6 col-xl">
+                <article class="dashboard-stat-card dashboard-chatbot-card h-100">
+                    <span class="dashboard-stat-label">AI career coach</span>
+                    <strong class="dashboard-stat-value dashboard-stat-chatbot">Chatbot</strong>
+                    <span class="dashboard-stat-caption">Get answers to your career questions</span>
+                    <a href="{{ url_for('chatbot.chatbot_home') }}">Ask CareerPilot <span aria-hidden="true">→</span></a>
+                </article>
+            </div>
+        </section>
 
-        </div>
+        <section class="row g-4 mt-1">
+            <div class="col-lg-8">
+                <article class="dashboard-coach-card" data-dashboard-coach data-ai-url="{{ dashboard_ai_url }}">
+                    <div class="dashboard-coach-topline">
+                        <div>
+                            <div class="dashboard-eyebrow">AI next-step coach</div>
+                            <h2 class="h3 mb-1" data-dashboard-headline>{{ guidance.headline }}</h2>
+                        </div>
+                        <span class="dashboard-ai-badge {% if not guidance.ai_assisted %}dashboard-ai-badge-local{% endif %}" data-dashboard-ai-badge>{% if guidance.ai_assisted %}AI personalised{% else %}Progress-based{% endif %}</span>
+                    </div>
+                    <p class="dashboard-coach-summary" data-dashboard-summary>{{ guidance.summary }}</p>
+                    <div class="dashboard-next-action">
+                        <div class="dashboard-next-action-count">Next</div>
+                        <div>
+                            <h3 class="h5 mb-1" data-dashboard-action-title>{{ guidance.next_action.title }}</h3>
+                            <p class="mb-3" data-dashboard-action-body>{{ guidance.next_action.body }}</p>
+                            <a class="btn btn-primary btn-sm" href="{{ guidance.next_action.url }}" data-dashboard-action-link>{{ guidance.next_action.label }}</a>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-outline-light btn-sm dashboard-ai-refresh" data-dashboard-refresh>
+                        <span>Generate AI coaching</span>
+                        <span aria-hidden="true">↗</span>
+                    </button>
+                    <p class="dashboard-ai-note mb-0">AI coaching uses only your saved profile and CareerPilot activity. It does not make hiring predictions.</p>
+                </article>
+            </div>
+            <div class="col-lg-4">
+                <article class="dashboard-milestone-card h-100">
+                    <div class="dashboard-eyebrow">Preparation foundations</div>
+                    <h2 class="h5 mb-3">Your progress checklist</h2>
+                    <ul class="dashboard-milestones">
+                        {% for milestone in progress.milestones %}
+                        <li class="{% if milestone.complete %}is-complete{% endif %}">
+                            <span aria-hidden="true">{% if milestone.complete %}✓{% else %}{{ loop.index }}{% endif %}</span>
+                            <span>{{ milestone.label }}</span>
+                            {% if not milestone.complete %}
+                            <a href="{{ action_links[milestone.action_key].url }}">Start</a>
+                            {% endif %}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </article>
+            </div>
+        </section>
 
+        <section class="row g-4 mt-1">
+            <div class="col-lg-7">
+                <article class="card border-0 shadow-sm h-100 dashboard-panel">
+                    <div class="card-body p-4 p-lg-5">
+                        <div class="d-flex justify-content-between align-items-start gap-3 mb-4">
+                            <div>
+                                <div class="dashboard-eyebrow">Weekly focus</div>
+                                <h2 class="h4 mb-0">A small plan you can finish</h2>
+                            </div>
+                            <span class="dashboard-panel-chip">3 steps</span>
+                        </div>
+                        <ol class="dashboard-week-plan" data-dashboard-plan>
+                            {% for item in guidance.weekly_plan %}
+                            <li>
+                                <span class="dashboard-plan-index">{{ loop.index }}</span>
+                                <div>
+                                    <h3 class="h6 mb-1">{{ item.title }}</h3>
+                                    <p class="mb-2">{{ item.detail }}</p>
+                                    <a href="{{ item.url }}">{{ item.label }} <span aria-hidden="true">→</span></a>
+                                </div>
+                            </li>
+                            {% endfor %}
+                        </ol>
+                    </div>
+                </article>
+            </div>
+            <div class="col-lg-5">
+                <article class="card border-0 shadow-sm h-100 dashboard-panel">
+                    <div class="card-body p-4">
+                        <div class="dashboard-eyebrow">Review signals</div>
+                        <h2 class="h5 mb-3">What to keep in view</h2>
+                        <div class="dashboard-signal-group">
+                            <h3 class="h6 text-success">What’s moving forward</h3>
+                            <ul data-dashboard-strengths>
+                                {% for item in guidance.strengths %}<li>{{ item }}</li>{% endfor %}
+                            </ul>
+                        </div>
+                        <div class="dashboard-signal-group">
+                            <h3 class="h6 text-primary">Focus next</h3>
+                            <ul data-dashboard-focus>
+                                {% for item in guidance.focus_areas %}<li>{{ item }}</li>{% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                </article>
+            </div>
+        </section>
+
+        <section class="row g-4 mt-1">
+            <div class="col-lg-7">
+                <article class="card border-0 shadow-sm h-100 dashboard-panel">
+                    <div class="card-body p-4 p-lg-5">
+                        <div class="d-flex justify-content-between align-items-start mb-4">
+                            <div>
+                                <div class="dashboard-eyebrow">Recent activity</div>
+                                <h2 class="h4 mb-0">Your preparation timeline</h2>
+                            </div>
+                            <span class="dashboard-panel-chip">Last updates</span>
+                        </div>
+                        {% if progress.activities %}
+                        <div class="dashboard-activity-list">
+                            {% for activity in progress.activities %}
+                            <article class="dashboard-activity-item">
+                                <span class="dashboard-activity-dot" aria-hidden="true"></span>
+                                <div>
+                                    <div class="d-flex justify-content-between gap-3">
+                                        <h3 class="h6 mb-1">{{ activity.title }}</h3>
+                                        <time>{{ activity.date }}</time>
+                                    </div>
+                                    <p class="mb-0">{{ activity.detail }}</p>
+                                </div>
+                            </article>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="dashboard-empty-state">
+                            <strong>Your timeline starts with one action.</strong>
+                            <span>Set a target role or review your resume to begin building a useful progress record.</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </article>
+            </div>
+            <div class="col-lg-5">
+                <article class="dashboard-tools-card h-100">
+                    <div class="dashboard-eyebrow">Career workspace</div>
+                    <h2 class="h4 mb-2">Choose a tool for today</h2>
+                    <p class="mb-3">Each tool feeds the next: set direction, improve your story, practise it, then plan the evidence you still need.</p>
+                    <div class="dashboard-tool-grid">
+                        <a href="{{ url_for('profile.student_profile') }}"><span>01</span>Profile</a>
+                        <a href="{{ url_for('resume.resume_home') }}"><span>02</span>Resume</a>
+                        <a href="{{ url_for('interview.interview_home') }}"><span>03</span>Interview</a>
+                        <a href="{{ url_for('roadmap.roadmap_page') }}"><span>04</span>Roadmap</a>
+                        <a href="{{ url_for('chatbot.chatbot_home') }}"><span>05</span>Chatbot</a>
+                    </div>
+                </article>
+            </div>
+        </section>
     </div>
-
 </div>
-
 {% endblock %}

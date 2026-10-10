@@ -1,383 +1,237 @@
 {% extends "layouts/base.html" %}
 
-{% block title %}
-Resume Analysis | CareerPilot AI
-{% endblock %}
+{% block title %}Resume Review | CareerPilot AI{% endblock %}
 
 {% block content %}
-
-<div class="container mt-5">
-
-    <h2 class="mb-4">
-        Resume Analysis
-    </h2>
-
-
-    <!-- ATS Score -->
-     <div class="alert alert-info mb-4">
-
-        <strong>Detected Career Domain:</strong>
-
-        {{ career_domain }}
-
-    </div>
-
-    <div class="card shadow-sm mb-4">
-
-        <div class="card-body text-center">
-
-            <h5 class="text-muted">
-                ATS SCORE
-            </h5>
-
-            <h1 class="display-3 fw-bold">
-                {{ ats_score }}
-            </h1>
-
-            <p class="text-muted">
-                out of 100
-            </p>
-
-            <h3>Recommended Jobs</h3>
-
-            <ul>
-                {% for job in recommended_jobs %}
-                    <li>{{ job }}</li>
-                {% endfor %}
-            </ul>
-
-        </div>
-
-    </div>
-
-    <div class="card shadow-sm mb-4">
-
-        <div class="card-body">
-
-            <h4 class="mb-2">
-                AI Career Recommendations
-            </h4>
-
-            <p class="text-muted mb-4">
-                Career roles identified from your resume using
-                semantic AI analysis and resume evidence.
-            </p>
-
-            {% if ai_recommended_roles %}
-
-                {% for recommendation in ai_recommended_roles %}
-
-                    <div class="border rounded p-3 mb-3">
-
-                        <div class="d-flex justify-content-between
-                                    align-items-center mb-2">
-
-                            <h5 class="mb-0">
-                                {{ loop.index }}.
-                                {{ recommendation.role }}
-                            </h5>
-
-                            <span class="badge bg-primary">
-                                {{ recommendation.match_score }}%
-                            </span>
-
-                        </div>
-
-                        {% if recommendation.matched_keywords %}
-
-                            <div class="mb-2">
-
-                                <small class="text-muted">
-                                    Resume evidence
-                                </small>
-
-                                <div class="mt-1">
-
-                                    {% for skill in recommendation.matched_keywords %}
-
-                                        <span class="badge bg-light text-dark border me-1 mb-1">
-                                            {{ skill }}
-                                        </span>
-
-                                    {% endfor %}
-
-                                </div>
-
-                            </div>
-
-                        {% endif %}
-
-                        <small class="text-muted">
-                            {{ recommendation.reason }}
-                        </small>
-
-                    </div>
-
-                {% endfor %}
-
-            {% else %}
-
-                <div class="alert alert-secondary">
-                    No sufficiently relevant career roles were detected.
-                </div>
-
-            {% endif %}
-
-        </div>
-
-    </div>
-
-    <!-- Resume Analysis Breakdown -->
-
-    <div class="row mb-4">
-
-        <!-- ATS Score -->
-        <div class="col-md-3 mb-3">
-            <div class="card shadow-sm h-100">
-                <div class="card-body text-center">
-
-                    <h6>ATS Score</h6>
-
-                    <h3 class="text-primary">
-                        {{ "%.2f"|format(ats_score) }}%
-                    </h3>
-
-                    <small class="text-muted">
-                        Overall Resume Score
-                    </small>
-
-                </div>
+<div class="resume-results-page">
+    <div class="container py-5">
+        {% if ai_feedback %}
+        <header class="resume-results-header">
+            <div>
+                <div class="resume-eyebrow">{{ ai_feedback.review_basis }}</div>
+                <h1>Resume review, grounded in your document.</h1>
+                <p class="mb-0">Scores are diagnostic signals from readable text. Use the detailed guidance to make accurate, supportable improvements.</p>
             </div>
-        </div>
-
-
-        <!-- Skill Score -->
-        <div class="col-md-3 mb-3">
-            <div class="card shadow-sm h-100">
-                <div class="card-body text-center">
-
-                    <h6>Skill Score</h6>
-
-                    <h3>
-                        {{ "%.2f"|format(skill_score) }}%
-                    </h3>
-
-                    <small class="text-muted">
-                        Detected Skills
-                    </small>
-
-                </div>
-            </div>
-        </div>
-
-
-        <!-- Section Score -->
-        <div class="col-md-3 mb-3">
-            <div class="card shadow-sm h-100">
-                <div class="card-body text-center">
-
-                    <h6>Section Score</h6>
-
-                    <h3>
-                        {{ "%.2f"|format(section_score) }}%
-                    </h3>
-
-                    <small class="text-muted">
-                        Resume Structure
-                    </small>
-
-                </div>
-            </div>
-        </div>
-
-
-        <!-- Content Score -->
-        <div class="col-md-3 mb-3">
-            <div class="card shadow-sm h-100">
-                <div class="card-body text-center">
-
-                    <h6>Content Score</h6>
-
-                    <h3>
-                        {{ "%.2f"|format(content_score) }}%
-                    </h3>
-
-                    <small class="text-muted">
-                        Resume Content
-                    </small>
-
-                </div>
-            </div>
-        </div>
-
-    </div>
-
-    <!-- AI Resume Analysis -->
-
-    <div class="card shadow-sm mb-4">
-
-        <div class="card-body">
-
-            <h4 class="mb-3">
-                AI Resume Analysis
-            </h4>
-
-            <p class="text-muted mb-3">
-                AI analyzes your resume to evaluate its quality,
-                structure, skills, content, and ATS compatibility.
-            </p>
-
-            <div class="row">
-
-                <div class="col-md-6">
-
-                    <p class="mb-1">
-                        <strong>AI Resume Quality</strong>
-                    </p>
-
-                    <h4 class="text-primary">
-                        {{ "%.2f"|format(ai_quality_score) }}%
-                    </h4>
-
-                    <small class="text-muted">
-                        AI-powered resume quality analysis
-                    </small>
-
-                </div>
-
-                <div class="col-md-6">
-
-                    <p class="mb-1">
-                        <strong>Analysis Type</strong>
-                    </p>
-
-                    <h4>
-                        Resume-Only
-                    </h4>
-
-                    <small class="text-muted">
-                        No job description required
-                    </small>
-
-                </div>
-
-            </div>
-
-        </div>
-
-    </div>
-
-
-    <!-- Detected Skills -->
-
-    <div class="card shadow-sm mb-4">
-
-        <div class="card-body">
-
-            <h4>
-                Detected Skills
-            </h4>
-
-            {% if matched_skills %}
-
-                {% for skill in matched_skills %}
-
-                    <span class="badge bg-success me-2 mb-2">
-                        {{ skill }}
-                    </span>
-
-                {% endfor %}
-
-            {% else %}
-
-                <p class="text-muted">
-                    No skills detected in the resume.
-                </p>
-
-            {% endif %}
-
-        </div>
-
-    </div>
-
-
-    <!-- Resume Sections -->
-
-    <div class="card shadow-sm mb-4">
-
-        <div class="card-body">
-
-            <h4>
-                Resume Sections
-            </h4>
-
-            {% for section, found in detected_sections.items() %}
-
-                {% if found %}
-
-                    <p class="text-success mb-1">
-                        ✓ {{ section|title }}
-                    </p>
-
+            <div class="d-flex flex-wrap gap-2">
+                {% if ai_feedback.ai_assisted %}
+                <span class="resume-status-badge">AI editorial review included</span>
                 {% else %}
-
-                    <p class="text-danger mb-1">
-                        ✗ {{ section|title }}
-                    </p>
-
+                <span class="resume-status-badge resume-status-local">Evidence-based review</span>
                 {% endif %}
+                <a href="{{ url_for('resume.resume_home') }}" class="btn btn-light">Analyze another</a>
+            </div>
+        </header>
 
-            {% endfor %}
+        {% if not history_saved %}
+        <div class="alert alert-warning mt-4 mb-0">Your review is ready, but we could not save it to your history right now.</div>
+        {% endif %}
 
-        </div>
+        <section class="row g-4 mt-1">
+            <div class="col-lg-4">
+                <div class="resume-score-panel h-100">
+                    <span class="resume-score-label">Overall readiness signal</span>
+                    <div class="resume-score-orb" aria-label="Overall readiness score {{ ai_feedback.overall_score }} out of 100">
+                        <strong>{{ ai_feedback.overall_score }}</strong><span>/100</span>
+                    </div>
+                    <p class="small mb-0">A weighted diagnostic based on section coverage, scannability, content evidence, and visible skills—not a prediction of an application outcome.</p>
+                </div>
+            </div>
+            <div class="col-lg-8">
+                <div class="card border-0 shadow-sm h-100 resume-summary-card">
+                    <div class="card-body p-4 p-lg-5">
+                        <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+                            <div>
+                                <div class="resume-section-kicker">Editorial summary</div>
+                                <h2 class="h4 mb-0">Where to focus first</h2>
+                            </div>
+                            <span class="resume-detail-count">{{ ai_feedback.facts.word_count }} words read</span>
+                        </div>
+                        <p class="resume-summary-copy mb-0">{{ ai_feedback.summary }}</p>
+                    </div>
+                </div>
+            </div>
+        </section>
 
-    </div>
+        <section class="mt-4">
+            <div class="d-flex justify-content-between align-items-end gap-3 mb-3">
+                <div>
+                    <div class="resume-section-kicker">Diagnostic snapshot</div>
+                    <h2 class="h4 mb-0">Make the basics easy to scan</h2>
+                </div>
+                <span class="small text-muted">These are text-based indicators, not an ATS simulation.</span>
+            </div>
+            <div class="row g-3">
+                {% for label, score in ai_feedback.scores.items() %}
+                <div class="col-6 col-lg-3">
+                    <article class="resume-metric-card h-100">
+                        <span>{{ label }}</span>
+                        <strong>{{ score }}<small>/100</small></strong>
+                        <div class="progress" role="progressbar" aria-label="{{ label }}" aria-valuenow="{{ score }}" aria-valuemin="0" aria-valuemax="100">
+                            <div class="progress-bar" style="width: {{ score }}%"></div>
+                        </div>
+                    </article>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
 
+        <section class="row g-4 mt-1">
+            <div class="col-lg-8">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body p-4 p-lg-5">
+                        <div class="resume-section-kicker">Action plan</div>
+                        <h2 class="h4 mb-4">Highest-impact improvements</h2>
+                        <div class="resume-action-list">
+                            {% for item in ai_feedback.priority_actions %}
+                            <article class="resume-action-item">
+                                <div class="resume-priority resume-priority-{{ item.priority }}">{{ item.priority }}</div>
+                                <div>
+                                    <h3 class="h6 mb-1">{{ item.title }}</h3>
+                                    <p class="mb-2">{{ item.diagnosis }}</p>
+                                    <p class="resume-action-how mb-2"><strong>Next move:</strong> {{ item.action }}</p>
+                                    {% if item.example %}
+                                    <p class="resume-action-example mb-0"><strong>Safe example:</strong> {{ item.example }}</p>
+                                    {% endif %}
+                                </div>
+                            </article>
+                            {% else %}
+                            <p class="text-muted mb-0">No priority actions were returned. Review your resume for clear sections, evidence, and relevant skills.</p>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body p-4">
+                        <div class="resume-section-kicker">Detected sections</div>
+                        <h2 class="h5 mb-3">Document structure</h2>
+                        <ul class="resume-section-checklist">
+                            {% for name, found in ai_feedback.sections.items() %}
+                            <li class="{% if found %}found{% else %}missing{% endif %}">
+                                <span aria-hidden="true">{% if found %}✓{% else %}−{% endif %}</span>{{ name }}
+                            </li>
+                            {% endfor %}
+                        </ul>
+                        <div class="resume-facts mt-4">
+                            <span>{{ ai_feedback.facts.bullet_count }} bullets</span>
+                            <span>{{ ai_feedback.facts.action_bullet_count }} action-led</span>
+                            <span>{{ ai_feedback.facts.metric_bullet_count }} quantified</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
 
-    <!-- Recommendations -->
+        <section class="row g-4 mt-1">
+            <div class="col-lg-7">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body p-4 p-lg-5">
+                        <div class="resume-section-kicker">What’s already working</div>
+                        <h2 class="h4 mb-3">Keep and strengthen these signals</h2>
+                        <ul class="resume-strength-list mb-0">
+                            {% for strength in ai_feedback.strengths %}
+                            <li><span aria-hidden="true">✓</span><span>{{ strength }}</span></li>
+                            {% else %}
+                            <li><span aria-hidden="true">•</span><span>Review the document against the diagnostic snapshot above.</span></li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-5">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body p-4">
+                        <div class="resume-section-kicker">Visible skills</div>
+                        <h2 class="h5 mb-3">Skills detected in the text</h2>
+                        {% if ai_feedback.detected_skills %}
+                        <div class="resume-skill-cloud">
+                            {% for skill in ai_feedback.detected_skills %}
+                            <span>{{ skill }}</span>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <p class="text-muted small mb-0">No skills from the supported evidence list were detected. Add a clear Skills section with tools you can support.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </section>
 
-    <div class="card shadow-sm mb-4">
-
-        <div class="card-body">
-
-            <h4>
-                Recommendations
-            </h4>
-
-            {% if recommendations %}
-
-                <ul>
-
-                    {% for recommendation in recommendations %}
-
-                        <li class="mb-2">
-                            {{ recommendation }}
-                        </li>
-
-                    {% endfor %}
-
-                </ul>
-
-            {% else %}
-
-                <p class="text-success">
-                    No major recommendations at this stage.
-                </p>
-
+        {% if ai_feedback.job_alignment %}
+        <section class="resume-alignment-card mt-4">
+            <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+                <div>
+                    <div class="resume-section-kicker">Job-description comparison</div>
+                    <h2 class="h4 mb-1">Skill alignment, not a hiring score</h2>
+                    {% if ai_feedback.job_alignment.available %}
+                    <p class="mb-0">{{ ai_feedback.job_alignment.matched_skills|length }} of {{ ai_feedback.job_alignment.total_skills }} recognisable skills in the job description were also found in your resume text.</p>
+                    {% else %}
+                    <p class="mb-0">{{ ai_feedback.job_alignment.message }}</p>
+                    {% endif %}
+                </div>
+                {% if ai_feedback.job_alignment.available %}
+                <div class="resume-alignment-score">{{ ai_feedback.job_alignment.score }}<small>%</small></div>
+                {% endif %}
+            </div>
+            {% if ai_feedback.job_alignment.available %}
+            <div class="row g-3 mt-1">
+                <div class="col-md-6">
+                    <h3 class="h6 text-success">Detected in both</h3>
+                    <div class="resume-skill-cloud resume-skill-cloud-positive">
+                        {% for skill in ai_feedback.job_alignment.matched_skills %}<span>{{ skill }}</span>{% else %}<small class="text-muted">None of the supported skills overlap yet.</small>{% endfor %}
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <h3 class="h6 text-primary">Consider adding evidence for</h3>
+                    <div class="resume-skill-cloud">
+                        {% for skill in ai_feedback.job_alignment.missing_skills %}<span>{{ skill }}</span>{% else %}<small class="text-muted">No gaps were found in the supported skills list.</small>{% endfor %}
+                    </div>
+                </div>
+            </div>
             {% endif %}
+        </section>
+        {% endif %}
 
-        </div>
+        <section class="row g-4 mt-1">
+            <div class="col-lg-7">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body p-4 p-lg-5">
+                        <div class="resume-section-kicker">Detailed review</div>
+                        <h2 class="h4 mb-3">How to improve the story your resume tells</h2>
+                        {% for item in ai_feedback.category_feedback %}
+                        <article class="resume-feedback-area">
+                            <h3 class="h6">{{ item.area }}</h3>
+                            <p class="mb-0">{{ item.feedback }}</p>
+                        </article>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-5">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body p-4">
+                        <div class="resume-section-kicker">Suggested directions</div>
+                        <h2 class="h5 mb-3">Roles to explore</h2>
+                        {% for role in ai_feedback.suggested_roles %}
+                        <article class="resume-role-card">
+                            <h3 class="h6 mb-1">{{ role.role }}</h3>
+                            <p class="small mb-0">{{ role.reason }}</p>
+                        </article>
+                        {% else %}
+                        <p class="small text-muted mb-0">Add a target role on your next review for more focused directions.</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </section>
 
+        <section class="resume-method-note mt-4">
+            <strong>How to use this review:</strong> Scores reflect only readable PDF text and common document signals. AI feedback is editorial guidance; confirm every claim, number, and skill before adding it to your resume.
+        </section>
+        {% else %}
+        <div class="alert alert-secondary">The review could not be displayed. <a href="{{ url_for('resume.resume_home') }}">Try another upload.</a></div>
+        {% endif %}
     </div>
-
-
-    <a href="{{ url_for('resume.resume_home') }}"
-       class="btn btn-primary">
-
-        Analyze Another Resume
-
-    </a>
-
 </div>
-
 {% endblock %}

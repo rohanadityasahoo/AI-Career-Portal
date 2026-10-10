@@ -135,6 +135,34 @@ Interview Report | CareerPilot AI
                     {% endfor %}
 
 
+                    <section class="interview-report-insights mt-4" aria-labelledby="report-insights-heading">
+                        <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+                            <div>
+                                <p class="interview-eyebrow mb-1">Practice pattern</p>
+                                <h2 id="report-insights-heading" class="h5 mb-0">Your feedback priorities</h2>
+                            </div>
+                            <span class="interview-session-tag">{{ trend|title }} across the session</span>
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-md-5">
+                                <div class="interview-insight-card is-strength h-100">
+                                    <span>Strongest dimension</span>
+                                    <strong>{{ top_strength }}</strong>
+                                    <small>{{ rubric_averages.get(top_strength, 0) }}/{{ {'Relevance': 30, 'Depth': 20, 'Evidence': 20, 'Structure': 20, 'Clarity': 10}.get(top_strength, 0) }} average</small>
+                                </div>
+                            </div>
+                            <div class="col-md-7">
+                                <div class="interview-insight-card h-100">
+                                    <span>Focus for your next session</span>
+                                    {% for area in focus_areas %}
+                                    <p><strong>{{ area.name }}:</strong> {{ area.guidance }}</p>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+
                     <!-- Overall Feedback -->
 
                     <div class="alert alert-info mt-4 interview-feedback-alert">

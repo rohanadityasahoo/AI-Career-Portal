@@ -25,40 +25,49 @@ AI Interview Preparation | CareerPilot AI
                     feedback you can use in your next answer.
                 </p>
 
-                <div class="row g-3 mt-2">
-                    <div class="col-sm-4">
-                        <div class="interview-hero-stat">
-                            <strong>5</strong>
-                            <span>questions per session</span>
-                        </div>
-                    </div>
-                    <div class="col-sm-4">
-                        <div class="interview-hero-stat">
-                            <strong>Instant</strong>
-                            <span>answer feedback</span>
-                        </div>
-                    </div>
-                    <div class="col-sm-4">
-                        <div class="interview-hero-stat">
-                            <strong>0–100</strong>
-                            <span>practice score</span>
-                        </div>
+            </section>
+
+            <section class="row g-3 interview-setup-benefits" aria-label="Interview practice features">
+                <div class="col-md-4">
+                    <div class="interview-setup-benefit">
+                        <strong>Role-specific questions</strong>
+                        <span>Each five-question set covers knowledge, reasoning, evidence, and judgement.</span>
                     </div>
                 </div>
-
+                <div class="col-md-4">
+                    <div class="interview-setup-benefit">
+                        <strong>Clear scoring</strong>
+                        <span>See relevance, depth, evidence, structure, and clarity—not only one number.</span>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="interview-setup-benefit">
+                        <strong>Actionable coaching</strong>
+                        <span>Use focused feedback and answer blueprints to improve on the next question.</span>
+                    </div>
+                </div>
             </section>
 
             <div class="card shadow-sm border-0 interview-setup-card">
 
                 <div class="card-body p-4">
 
-                    <h2 class="h4 fw-bold mb-1">
-                        Configure your practice interview
-                    </h2>
+                    <div class="d-flex flex-column flex-sm-row align-items-sm-start justify-content-between gap-3 mb-4">
+                        <div>
+                            <h2 class="h4 fw-bold mb-1">
+                                Configure your practice interview
+                            </h2>
 
-                    <p class="text-muted mb-4">
-                        Pick a target role and the level of challenge you want.
-                    </p>
+                            <p class="text-muted mb-0">
+                                Pick a target role and the level of challenge you want.
+                            </p>
+                        </div>
+
+                        <a href="{{ url_for('interview.interview_history') }}"
+                           class="btn btn-outline-primary btn-sm text-nowrap">
+                            View interview history
+                        </a>
+                    </div>
 
                     {% if error %}
                     <div class="alert alert-danger" role="alert">
@@ -958,38 +967,6 @@ AI Interview Preparation | CareerPilot AI
                         </button>
 
                     </form>
-
-                </div>
-
-            </div>
-
-            <div class="card border-0 mt-4 interview-guidance-card">
-
-                <div class="card-body p-4">
-
-                    <h5 class="mb-3">
-                        Make each answer stronger
-                    </h5>
-
-                    <p class="text-muted mb-3">
-                        Use a clear structure: briefly state your approach,
-                        explain why, and support it with an example.
-                    </p>
-
-                    <ul class="mb-0 text-muted">
-                        <li>
-                            Aim for 50–120 words when the question needs an explanation.
-                        </li>
-                        <li>
-                            Connect your answer to a project, study, or practical experience.
-                        </li>
-                        <li>
-                            Explain your reasoning—not only the final outcome.
-                        </li>
-                        <li>
-                            Scores are practice guidance, not a hiring decision.
-                        </li>
-                    </ul>
 
                 </div>
 

@@ -1,6 +1,6 @@
-from ai_modules.interview_analyzer import (
-    evaluate_answer as evaluate_answer_ai,
-    get_question_pool,
+from ai_modules.career_ai import (
+    evaluate_interview_answer as evaluate_answer_with_groq,
+    generate_interview_questions as generate_questions_with_groq,
 )
 from database.db import get_db_connection
 from flask import (
@@ -18,6 +18,14 @@ interview = Blueprint('interview', __name__)
 
 TOTAL_QUESTIONS = 5
 VALID_DIFFICULTIES = {'easy', 'medium', 'hard'}
+MAX_ANSWER_LENGTH = 5_000
+RUBRIC_MAXIMUMS = {
+    'Relevance': 30,
+    'Depth': 20,
+    'Evidence': 20,
+    'Structure': 20,
+    'Clarity': 10,
+}
 
 
 # ============================================================
@@ -222,12 +230,97 @@ def get_interview_domain(role):
   return ROLE_TO_DOMAIN.get(role.strip().lower())
 
 
+def _normalise_question(question):
+  """Make current and legacy session questions safe to render."""
+  if isinstance(question, dict):
+    text = str(question.get('question') or '').strip()[:340]
+    competency = str(question.get('competency') or '').strip()[:100]
+    category = str(question.get('category') or '').strip()[:60]
+    guidance = str(question.get('answer_guidance') or '').strip()[:180]
+  else:
+    text = str(question or '').strip()[:340]
+    competency = ''
+    category = ''
+    guidance = ''
+
+  return {
+      'question': text,
+      'competency': competency or 'Role knowledge and communication',
+      'category': category or 'Interview practice',
+      'answer_guidance': guidance
+      or 'Answer directly, explain your reasoning, and add a relevant example.',
+  }
+
+
+def _session_summary(scores, rubrics):
+  """Turn the saved rubric scores into a useful end-of-session plan."""
+  totals = {name: 0 for name in RUBRIC_MAXIMUMS}
+  rubric_count = 0
+  for rubric in rubrics if isinstance(rubrics, list) else []:
+    if not isinstance(rubric, dict):
+      continue
+    rubric_count += 1
+    for name, maximum in RUBRIC_MAXIMUMS.items():
+      try:
+        totals[name] += max(0, min(maximum, int(rubric.get(name, 0))))
+      except (TypeError, ValueError):
+        continue
+
+  averages = {
+      name: round(total / rubric_count, 1) if rubric_count else 0
+      for name, total in totals.items()
+  }
+  percentages = {
+      name: averages[name] / maximum if maximum else 0
+      for name, maximum in RUBRIC_MAXIMUMS.items()
+  }
+  strongest = max(percentages, key=percentages.get)
+  focus = sorted(percentages, key=percentages.get)[:2]
+  focus_guidance = {
+      'Relevance': 'Start with a direct response that stays close to the question.',
+      'Depth': 'Explain the why behind your choice, process, or recommendation.',
+      'Evidence': 'Use a truthful example and name the result or lesson learned.',
+      'Structure': 'Use a simple STAR or problem–approach–result sequence.',
+      'Clarity': 'Use short, concrete sentences and signpost your key point.',
+  }
+  strength_guidance = {
+      'Relevance': 'You generally kept your answers focused on the question.',
+      'Depth': 'You showed useful reasoning beyond a surface-level response.',
+      'Evidence': 'You supported answers with meaningful examples or outcomes.',
+      'Structure': 'You organised your answers in a way that was easy to follow.',
+      'Clarity': 'You communicated your ideas clearly and concisely.',
+  }
+
+  trend = 'steady'
+  if len(scores) >= 2:
+    change = scores[-1] - scores[0]
+    if change >= 8:
+      trend = 'improving'
+    elif change <= -8:
+      trend = 'uneven'
+
+  return {
+      'feedback': (
+          f'{strength_guidance[strongest]} For your next practice session, '
+          f'{focus_guidance[focus[0]]}'
+      ),
+      'top_strength': strongest,
+      'focus_areas': [
+          {'name': name, 'guidance': focus_guidance[name]}
+          for name in focus
+      ],
+      'rubric_averages': averages,
+      'trend': trend,
+  }
+
+
 # ============================================================
 # START INTERVIEW
 # ============================================================
 
 
 @interview.route('/interview', methods=['GET', 'POST'])
+@login_required
 def interview_home():
   if request.method == 'POST':
     role = (request.form.get('role') or '').strip()
@@ -275,16 +368,18 @@ def interview_home():
     session['interview_difficulty'] = difficulty
     session['interview_question_number'] = 1
     session['interview_scores'] = []
+    session['interview_rubrics'] = []
 
-    question_pool = get_question_pool(role, difficulty, domain=domain)
-
+    question_pool = generate_questions_with_groq(
+        role, domain, difficulty, TOTAL_QUESTIONS
+    )
     if not question_pool:
       return (
           render_template(
               'interview/index.html',
               error=(
-                  'No questions are available for that selection. Please try'
-                  ' another role.'
+                  'The AI interview service is temporarily unavailable. Please'
+                  ' try again in a moment.'
               ),
               selected_role=role,
               selected_difficulty=difficulty,
@@ -292,7 +387,7 @@ def interview_home():
           400,
       )
 
-    question = question_pool.pop(0)
+    question = _normalise_question(question_pool.pop(0))
     session['interview_questions'] = question_pool
     session['current_question'] = question
 
@@ -347,14 +442,21 @@ def interview_history():
 
 
 @interview.route('/interview/evaluate', methods=['POST'])
+@login_required
 def evaluate_answer():
   answer = (request.form.get('answer') or '').strip()
-  question = session.get('current_question')
+  question = _normalise_question(session.get('current_question'))
   role = session.get('interview_role')
   domain = session.get('interview_domain')
   difficulty = session.get('interview_difficulty')
   question_number = session.get('interview_question_number', 1)
   scores = session.get('interview_scores', [])
+  rubrics = session.get('interview_rubrics', [])
+
+  if not isinstance(scores, list):
+    scores = []
+  if not isinstance(rubrics, list):
+    rubrics = []
 
   if not answer:
     return (
@@ -366,50 +468,56 @@ def evaluate_answer():
             difficulty=difficulty,
             question_number=question_number,
             total_questions=TOTAL_QUESTIONS,
+            answer=answer,
             error='Please write an answer before continuing.',
         ),
         400,
     )
 
-  if not role or not difficulty or not question:
+  if len(answer) > MAX_ANSWER_LENGTH:
+    return (
+        render_template(
+            'interview/question.html',
+            question=question,
+            role=role,
+            domain=domain,
+            difficulty=difficulty,
+            question_number=question_number,
+            total_questions=TOTAL_QUESTIONS,
+            answer=answer,
+            error=(
+                f'Please keep your answer within {MAX_ANSWER_LENGTH:,} '
+                'characters.'
+            ),
+        ),
+        400,
+    )
+
+  if not role or not difficulty or not question.get('question'):
     return redirect(url_for('interview.interview_home'))
 
-  # Evaluate answer using analyzer
-  result = evaluate_answer_ai(
-      answer, question, role=role, difficulty=difficulty
+  result = evaluate_answer_with_groq(
+      answer, question, role=role, difficulty=difficulty, domain=domain or ''
   )
-  score = result.get('score', 0)
+  try:
+    score = max(0, min(100, int(result.get('score', 0))))
+  except (TypeError, ValueError):
+    score = 0
   scores.append(score)
   session['interview_scores'] = scores
+  rubrics.append(result.get('rubric', {}))
+  session['interview_rubrics'] = rubrics
 
   # Check if interview is complete
   if question_number >= TOTAL_QUESTIONS:
     total_score = sum(scores)
     average_score = round(total_score / len(scores), 2)
 
-    if average_score >= 80:
-      overall_feedback = (
-          'Excellent interview performance. Your answers demonstrate strong'
-          ' understanding, relevance, and communication.'
-      )
-    elif average_score >= 60:
-      overall_feedback = (
-          'Good interview performance. You have a solid foundation, but your'
-          ' answers can be more detailed and supported with practical examples.'
-      )
-    elif average_score >= 40:
-      overall_feedback = (
-          'Average interview performance. Focus on improving technical depth,'
-          ' clarity, and the use of relevant examples.'
-      )
-    else:
-      overall_feedback = (
-          'Your interview performance needs improvement. Practice answering'
-          ' questions directly and explaining concepts with examples.'
-      )
+    summary = _session_summary(scores, rubrics)
 
-    conn = get_db_connection()
+    conn = None
     try:
+      conn = get_db_connection()
       with conn.cursor() as cursor:
         cursor.execute(
             """
@@ -427,8 +535,12 @@ def evaluate_answer():
             ),
         )
       conn.commit()
+    except Exception:
+      # A database issue should not hide feedback that was already generated.
+      flash('Your interview report is ready, but it could not be saved to history.', 'warning')
     finally:
-      conn.close()
+      if conn:
+        conn.close()
 
     # Clear active interview state from session
     for key in (
@@ -437,6 +549,7 @@ def evaluate_answer():
         'interview_difficulty',
         'interview_question_number',
         'interview_scores',
+        'interview_rubrics',
         'interview_questions',
         'current_question',
     ):
@@ -450,7 +563,11 @@ def evaluate_answer():
         scores=scores,
         total_questions=TOTAL_QUESTIONS,
         average_score=average_score,
-        feedback=overall_feedback,
+        feedback=summary['feedback'],
+        top_strength=summary['top_strength'],
+        focus_areas=summary['focus_areas'],
+        rubric_averages=summary['rubric_averages'],
+        trend=summary['trend'],
     )
 
   # Next Question
@@ -462,7 +579,7 @@ def evaluate_answer():
     flash('Your interview session has ended.', 'info')
     return redirect(url_for('interview.interview_home'))
 
-  next_question = question_pool.pop(0)
+  next_question = _normalise_question(question_pool.pop(0))
   session['interview_questions'] = question_pool
   session['current_question'] = next_question
 
@@ -478,5 +595,9 @@ def evaluate_answer():
       previous_feedback=result.get('feedback', ''),
       previous_strengths=result.get('strengths', []),
       previous_improvements=result.get('improvements', []),
+      previous_missing_points=result.get('missing_points', []),
+      previous_answer_outline=result.get('answer_outline', []),
+      previous_sample_answer=result.get('sample_answer', ''),
       previous_rubric=result.get('rubric', {}),
+      previous_ai_assisted=result.get('ai_assisted', False),
   )

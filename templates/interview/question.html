@@ -1,291 +1,186 @@
 {% extends "layouts/base.html" %}
 
-{% block title %}
-Interview Question | CareerPilot AI
-{% endblock %}
+{% block title %}Interview Question | CareerPilot AI{% endblock %}
 
 {% block content %}
+{% set rubric_maximums = {
+    'Relevance': 30,
+    'Depth': 20,
+    'Evidence': 20,
+    'Structure': 20,
+    'Clarity': 10
+} %}
 
-<div class="container py-5">
+<main class="interview-practice-page">
+    <div class="container py-5">
+        <header class="interview-session-header mb-4">
+            <div>
+                <div class="d-flex flex-wrap gap-2 align-items-center mb-3">
+                    <span class="interview-role-badge">{{ role|replace('_', ' ')|title }}</span>
+                    <span class="interview-session-tag">{{ question.category }}</span>
+                </div>
+                <p class="interview-eyebrow mb-2">Guided practice interview</p>
+                <h1 class="h2 mb-1">Question {{ question_number }} of {{ total_questions }}</h1>
+                <p class="mb-0">{{ domain }} · {{ difficulty|title }} difficulty</p>
+            </div>
+            <div class="interview-progress-panel" aria-label="Interview progress">
+                <div class="d-flex justify-content-between small mb-2">
+                    <span>Session progress</span>
+                    <strong>{{ question_number }}/{{ total_questions }}</strong>
+                </div>
+                <div class="progress" style="height: 7px;">
+                    <div class="progress-bar" role="progressbar" aria-label="Interview question progress" aria-valuenow="{{ question_number }}" aria-valuemin="0" aria-valuemax="{{ total_questions }}" style="width: {{ (question_number / total_questions) * 100 }}%;"></div>
+                </div>
+            </div>
+        </header>
 
-    <div class="row justify-content-center">
-
-        <div class="col-lg-8">
-
-            <div class="card shadow-sm border-0 interview-session-card">
-
-                <div class="card-body p-4">
-
-                    <!-- Progress -->
-
-                    <div class="d-flex justify-content-between
-                                align-items-center mb-3">
-
-                        <span class="badge interview-role-badge">
-
-                            {{ role|replace('_', ' ')|title }}
-
-                        </span>
-
-                        <span class="interview-question-count">
-
-                            Question {{ question_number }}
-                            of
-                            {{ total_questions }}
-
-                        </span>
-
-                    </div>
-
-
-                    <!-- Progress Bar -->
-
-                    <div class="progress mb-4"
-                         style="height: 8px;">
-
-                        <div
-                            class="progress-bar"
-                            role="progressbar"
-                            aria-valuenow="{{ question_number }}"
-                            aria-valuemin="0"
-                            aria-valuemax="{{ total_questions }}"
-                            style="width: {{ (question_number / total_questions) * 100 }}%;">
-
-                        </div>
-
-                    </div>
-
-
-                    <h1 class="h3 fw-bold mb-1">
-                        Your next interview question
-                    </h1>
-
-
-                    <p class="text-muted mb-4">
-                        {{ domain }} · {{ difficulty|title }} difficulty
-                    </p>
-
-                    {% if error %}
-                    <div class="alert alert-danger" role="alert">
-                        {{ error }}
-                    </div>
-                    {% endif %}
-
-
-                    <!-- Previous Score -->
-
-                    {% if previous_score is defined %}
-
-                    <div class="alert alert-success interview-feedback-alert">
-
-                        Previous answer score:
-
-                        <strong>
-                            {{ previous_score }}/100
-                        </strong>
-
-                    </div>
-
-                    {% endif %}
-
-
-                    {% if previous_feedback is defined and previous_feedback %}
-
-                    <div class="alert alert-info interview-feedback-alert">
-
-                        <strong>
-                            Feedback on your previous answer:
-                        </strong>
-
-                        <span>
-                            {{ previous_feedback }}
-                        </span>
-
-                    </div>
-
-                    {% endif %}
-
-
-                    {% if previous_strengths or previous_improvements %}
-
-                    <div class="row g-3 mb-4">
-
-                        {% if previous_strengths %}
-
-                        <div class="col-md-6">
-
-                            <div class="border rounded p-3 h-100">
-
-                                <h6 class="text-success fw-bold">
-                                    What you did well
-                                </h6>
-
-                                <ul class="mb-0 small">
-                                    {% for strength in previous_strengths %}
-                                    <li>{{ strength }}</li>
-                                    {% endfor %}
-                                </ul>
-
-                            </div>
-
-                        </div>
-
+        <div class="row g-4 align-items-start">
+            <div class="col-lg-8">
+                <section class="card border-0 shadow-sm interview-session-card">
+                    <div class="card-body p-4 p-lg-5">
+                        {% if error %}
+                        <div class="alert alert-danger" role="alert">{{ error }}</div>
                         {% endif %}
 
-                        {% if previous_improvements %}
-
-                        <div class="col-md-6">
-
-                            <div class="border rounded p-3 h-100">
-
-                                <h6 class="text-primary fw-bold">
-                                    Try next time
-                                </h6>
-
-                                <ul class="mb-0 small">
-                                    {% for improvement in previous_improvements %}
-                                    <li>{{ improvement }}</li>
-                                    {% endfor %}
-                                </ul>
-
+                        {% if previous_score is defined %}
+                        <section class="interview-feedback-summary mb-4" aria-labelledby="previous-feedback-heading">
+                            <div class="interview-feedback-score">
+                                <span>Previous answer</span>
+                                <strong>{{ previous_score }}/100</strong>
                             </div>
+                            <div>
+                                <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+                                    <h2 id="previous-feedback-heading" class="h5 mb-0">Feedback to use now</h2>
+                                    <span class="interview-feedback-source {% if not previous_ai_assisted %}is-fallback{% endif %}">{% if previous_ai_assisted %}AI-reviewed{% else %}Practice rubric{% endif %}</span>
+                                </div>
+                                <p class="mb-0">{{ previous_feedback }}</p>
+                            </div>
+                        </section>
 
+                        {% if previous_strengths or previous_improvements or previous_missing_points %}
+                        <div class="row g-3 mb-4">
+                            {% if previous_strengths %}
+                            <div class="col-md-6">
+                                <section class="interview-feedback-card is-strength h-100">
+                                    <h3 class="h6">Keep doing</h3>
+                                    <ul class="mb-0">
+                                        {% for strength in previous_strengths %}<li>{{ strength }}</li>{% endfor %}
+                                    </ul>
+                                </section>
+                            </div>
+                            {% endif %}
+                            {% if previous_improvements %}
+                            <div class="col-md-6">
+                                <section class="interview-feedback-card is-improvement h-100">
+                                    <h3 class="h6">Improve next</h3>
+                                    <ul class="mb-0">
+                                        {% for improvement in previous_improvements %}<li>{{ improvement }}</li>{% endfor %}
+                                    </ul>
+                                </section>
+                            </div>
+                            {% endif %}
+                            {% if previous_missing_points %}
+                            <div class="col-12">
+                                <section class="interview-missing-points">
+                                    <strong>Details to add next time:</strong>
+                                    <span>{% for point in previous_missing_points %}{{ point }}{% if not loop.last %} · {% endif %}{% endfor %}</span>
+                                </section>
+                            </div>
+                            {% endif %}
                         </div>
-
                         {% endif %}
 
-                    </div>
-
-                    {% endif %}
-
-
-                    {% if previous_rubric %}
-
-                    {% set rubric_maximums = {
-                        'Relevance': 30,
-                        'Depth': 20,
-                        'Evidence': 20,
-                        'Structure': 20,
-                        'Clarity': 10
-                    } %}
-
-                    <div class="interview-rubric mb-4">
-
-                        <h2 class="h6 fw-bold mb-3">
-                            How the previous answer was assessed
-                        </h2>
-
-                        {% for criterion, points in previous_rubric.items() %}
-                        {% set maximum = rubric_maximums[criterion] %}
-
-                        <div class="mb-3">
-                            <div class="d-flex justify-content-between small mb-1">
-                                <span>{{ criterion }}</span>
-                                <span class="text-muted">{{ points }}/{{ maximum }}</span>
+                        {% if previous_rubric %}
+                        <section class="interview-rubric mb-4" aria-labelledby="rubric-heading">
+                            <h2 id="rubric-heading" class="h6 mb-3">How your previous answer was assessed</h2>
+                            {% for criterion, maximum in rubric_maximums.items() %}
+                            {% set points = previous_rubric.get(criterion, 0) %}
+                            <div class="interview-rubric-row">
+                                <div class="d-flex justify-content-between small mb-1">
+                                    <span>{{ criterion }}</span>
+                                    <span>{{ points }}/{{ maximum }}</span>
+                                </div>
+                                <div class="progress"><div class="progress-bar" role="progressbar" aria-label="{{ criterion }} score" aria-valuenow="{{ points }}" aria-valuemin="0" aria-valuemax="{{ maximum }}" style="width: {{ (points / maximum) * 100 }}%;"></div></div>
                             </div>
+                            {% endfor %}
+                        </section>
+                        {% endif %}
 
-                            <div class="progress" style="height: 6px;">
-                                <div class="progress-bar"
-                                     role="progressbar"
-                                     aria-valuenow="{{ points }}"
-                                     aria-valuemin="0"
-                                     aria-valuemax="{{ maximum }}"
-                                     style="width: {{ (points / maximum) * 100 }}%;">
+                        {% if previous_answer_outline or previous_sample_answer %}
+                        <details class="interview-answer-coach mb-4">
+                            <summary>Open the answer coach for your previous question</summary>
+                            {% if previous_answer_outline %}
+                            <ol>{% for step in previous_answer_outline %}<li>{{ step }}</li>{% endfor %}</ol>
+                            {% endif %}
+                            {% if previous_sample_answer %}
+                            <p><strong>Illustrative answer:</strong> {{ previous_sample_answer }}</p>
+                            {% endif %}
+                        </details>
+                        {% endif %}
+                        {% endif %}
+
+                        <section class="interview-question-card" aria-labelledby="question-heading">
+                            <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+                                <span class="interview-eyebrow">Current question</span>
+                                <span class="interview-competency">{{ question.competency }}</span>
+                            </div>
+                            <h2 id="question-heading" class="h4 mb-0">{{ question.question }}</h2>
+                        </section>
+
+                        <form method="POST" action="{{ url_for('interview.evaluate_answer') }}" class="mt-4" data-interview-form>
+                            <div class="mb-2">
+                                <div class="d-flex justify-content-between align-items-center gap-3 mb-2">
+                                    <label for="answer" class="form-label fw-semibold mb-0">Your answer</label>
+                                    <span id="answer-word-count" class="small text-muted" aria-live="polite">0 words</span>
+                                </div>
+                                <textarea id="answer" name="answer" class="form-control" data-interview-answer data-answer-max="5000" rows="9" maxlength="5000" aria-describedby="answer-guidance answer-character-count" placeholder="Start with a direct answer. Then explain your reasoning and add one truthful example or result..." required>{{ answer|default('', true) }}</textarea>
+                                <div class="d-flex justify-content-between gap-3 mt-2">
+                                    <p id="answer-guidance" class="form-text mb-0">Aim for a focused answer with reasoning and evidence—not extra length.</p>
+                                    <span id="answer-character-count" class="form-text text-nowrap mb-0">0/5,000</span>
                                 </div>
                             </div>
-                        </div>
 
-                        {% endfor %}
-
-                    </div>
-
-                    {% endif %}
-
-
-                    <!-- Question -->
-
-                    <div class="interview-question-card mt-4">
-
-                        <span class="interview-eyebrow">
-                            Question {{ question_number }}
-                        </span>
-
-                        <h2 class="h4 mb-0 mt-2">
-                            {{ question }}
-                        </h2>
-
-                    </div>
-
-
-                    <!-- Answer -->
-
-                    <form method="POST"
-                          action="{{ url_for('interview.evaluate_answer') }}">
-
-                        <div class="mb-2">
-
-                            <div class="d-flex justify-content-between align-items-center gap-3">
-                                <label for="answer"
-                                       class="form-label fw-semibold mb-0">
-
-                                    Your answer
-
-                                </label>
-
-                                <span id="answer-word-count"
-                                      class="small text-muted"
-                                      aria-live="polite">
-                                    0 words
-                                </span>
+                            <div class="interview-answer-checklist mb-4">
+                                <span>Before you submit</span>
+                                <ul>
+                                    <li>Answer the exact question first.</li>
+                                    <li>Explain your decision, approach, or action.</li>
+                                    <li>Add a truthful example, outcome, or lesson.</li>
+                                </ul>
                             </div>
 
-                            <textarea
-                                id="answer"
-                                name="answer"
-                                class="form-control"
-                                data-interview-answer
-                                rows="8"
-                                placeholder="Give a direct answer, explain your approach, and add a relevant example..."
-                                required></textarea>
-
-                        </div>
-
-                        <p id="answer-guidance" class="form-text mb-4">
-                            Tip: aim for at least 50 words when explaining a skill, decision, or experience.
-                        </p>
-
-                        <div class="d-flex flex-column flex-sm-row gap-2">
-                            <button type="submit"
-                                    class="btn btn-primary px-4">
-
-                                {% if question_number == total_questions %}
-
-                                    Finish interview
-
-                                {% else %}
-
-                                    Submit & next question
-
-                                {% endif %}
-
-                            </button>
-
-                            <a href="{{ url_for('interview.interview_home') }}"
-                               class="btn btn-outline-secondary">
-                                Start over
-                            </a>
-                        </div>
-
-                    </form>
-
-                </div>
-
+                            <div class="d-flex flex-column flex-sm-row gap-2">
+                                <button type="submit" class="btn btn-primary px-4" data-interview-submit>
+                                    {% if question_number == total_questions %}Finish interview{% else %}Submit &amp; next question{% endif %}
+                                </button>
+                                <a href="{{ url_for('interview.interview_home') }}" class="btn btn-outline-secondary">Start over</a>
+                            </div>
+                        </form>
+                    </div>
+                </section>
             </div>
 
+            <aside class="col-lg-4">
+                <section class="interview-coach-card mb-3">
+                    <p class="interview-eyebrow mb-2">What is being assessed</p>
+                    <h2 class="h5 mb-3">{{ question.competency }}</h2>
+                    <div class="interview-coach-divider"></div>
+                    <p class="interview-eyebrow mb-2">A useful response shape</p>
+                    <p class="mb-0">{{ question.answer_guidance }}</p>
+                </section>
+
+                <section class="interview-rubric-card">
+                    <h2 class="h6 mb-3">Scoring guide</h2>
+                    <dl class="mb-0">
+                        <div><dt>Relevance</dt><dd>Answers the question</dd></div>
+                        <div><dt>Depth</dt><dd>Explains the reasoning</dd></div>
+                        <div><dt>Evidence</dt><dd>Uses a real example</dd></div>
+                        <div><dt>Structure</dt><dd>Easy to follow</dd></div>
+                        <div><dt>Clarity</dt><dd>Specific and direct</dd></div>
+                    </dl>
+                </section>
+            </aside>
         </div>
-
     </div>
-
-</div>
-
+</main>
 {% endblock %}

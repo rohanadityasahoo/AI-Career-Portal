@@ -1,23 +1,9 @@
 import os
 import uuid
-from ai_modules.ai_resume_analyzer import (
-    calculate_ai_resume_quality,
-    recommend_ai_roles,
-)
-from ai_modules.job_recommender import recommend_jobs
+from ai_modules.career_ai import analyze_resume
 from ai_modules.resume_analyzer import extract_resume_text
-from ai_modules.skill_analyzer import (
-    calculate_content_score,
-    calculate_domain_skill_score,
-    calculate_resume_ats_score,
-    calculate_section_score,
-    detect_career_domain,
-    detect_sections,
-    detect_skills,
-    generate_recommendations,
-)
 from database.db import get_db_connection
-from flask import Blueprint, redirect, render_template, request, session, url_for
+from flask import Blueprint, current_app, redirect, render_template, request, session
 from werkzeug.utils import secure_filename
 
 resume = Blueprint('resume', __name__)
@@ -30,6 +16,11 @@ def allowed_file(filename):
   return (
       '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
   )
+
+
+def clean_optional_text(value, limit):
+  """Keep optional tailoring inputs bounded before processing or sending them."""
+  return ' '.join(str(value or '').split())[:limit]
 
 
 @resume.route('/resume', methods=['GET', 'POST'])
@@ -67,22 +58,57 @@ def resume_home():
           400,
       )
 
+    # File extensions are only a convenience signal. Check the PDF signature
+    # as well before handing the upload to a PDF parser.
+    file_header = file.stream.read(8)
+    file.stream.seek(0)
+    if not file_header.startswith(b'%PDF-'):
+      return (
+          render_template(
+              'resume/upload.html',
+              error='The uploaded file does not appear to be a valid PDF.',
+          ),
+          400,
+      )
+
+    target_role = clean_optional_text(request.form.get('target_role'), 120)
+    job_description = clean_optional_text(
+        request.form.get('job_description'), 8000
+    )
+
     # -----------------------------
     # Save Resume with unique name
     # -----------------------------
-    safe_name = secure_filename(file.filename)
+    safe_name = secure_filename(file.filename) or 'resume.pdf'
     unique_filename = (
         f"student_{session['student_id']}_{uuid.uuid4().hex[:8]}_{safe_name}"
     )
 
-    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-    file_path = os.path.join(UPLOAD_FOLDER, unique_filename)
-    file.save(file_path)
+    upload_path = os.path.join(current_app.root_path, UPLOAD_FOLDER)
+    os.makedirs(upload_path, exist_ok=True)
+    file_path = os.path.join(upload_path, unique_filename)
 
     # -----------------------------
     # Extract Resume Text
     # -----------------------------
-    resume_text = extract_resume_text(file_path)
+    try:
+      file.save(file_path)
+      resume_text = extract_resume_text(file_path)
+    except OSError:
+      return (
+          render_template(
+              'resume/upload.html',
+              error='We could not process this upload. Please try the PDF again.',
+          ),
+          500,
+      )
+    finally:
+      # Analysis uses extracted text only; retaining a student's source resume
+      # would create an unnecessary privacy and storage burden.
+      try:
+        os.remove(file_path)
+      except OSError:
+        pass
 
     if not resume_text or not resume_text.strip():
       return (
@@ -93,46 +119,35 @@ def resume_home():
           400,
       )
 
-    # -----------------------------
-    # Detect Skills & Recommend Jobs
-    # -----------------------------
-    detected_skills = detect_skills(resume_text)
-
-    all_skills = []
-    for category in detected_skills.values():
-      all_skills.extend(category)
-    all_skills = list(dict.fromkeys(all_skills))
-
-    recommended_jobs = recommend_jobs(all_skills)
-
-    career_domain = detect_career_domain(detected_skills)
-    skill_score = calculate_domain_skill_score(detected_skills, career_domain)
-
-    # -----------------------------
-    # Sections & Content Scores
-    # -----------------------------
-    detected_sections = detect_sections(resume_text)
-    section_score = calculate_section_score(detected_sections)
-    content_score = calculate_content_score(resume_text)
-
-    # -----------------------------
-    # AI Quality & Role Matches
-    # -----------------------------
-    ai_quality_score = calculate_ai_resume_quality(resume_text)
-    ai_recommended_roles = recommend_ai_roles(resume_text)
-
-    # -----------------------------
-    # Final ATS Score (single calculation)
-    # -----------------------------
-    ats_score = calculate_resume_ats_score(
-        ai_quality_score, skill_score, section_score, content_score
+    # Local evidence is always calculated; Groq adds a detailed editorial
+    # layer when configured. The analysis therefore remains useful if the
+    # AI provider is unavailable.
+    ai_feedback = analyze_resume(
+        resume_text,
+        target_role=target_role,
+        job_description=job_description,
     )
+    if not ai_feedback:
+      return (
+          render_template(
+              'resume/upload.html',
+              error='We could not analyze the readable text in this PDF. Please try another file.',
+          ),
+          503,
+      )
+
+    missing_skills = ai_feedback.get('skill_gaps', [])
+    detected_skills = ai_feedback.get('detected_skills', [])
+    scores = ai_feedback.get('scores', {})
+    job_alignment = ai_feedback.get('job_alignment') or {}
 
     # -----------------------------
     # Database Persistence
     # -----------------------------
-    conn = get_db_connection()
+    history_saved = True
+    conn = None
     try:
+      conn = get_db_connection()
       with conn.cursor() as cursor:
         cursor.execute(
             """
@@ -150,46 +165,28 @@ def resume_home():
                     """,
             (
                 session.get('student_id'),
-                safe_name,  # display original clean filename to user
-                ats_score,
-                ats_score,
-                skill_score,
-                section_score,
-                content_score,
-                ', '.join(all_skills),
-                '',
+                safe_name,
+                ai_feedback.get('overall_score'),
+                job_alignment.get('score'),
+                scores.get('Skill visibility'),
+                scores.get('Section coverage'),
+                scores.get('Content evidence'),
+                ', '.join(detected_skills),
+                ', '.join(missing_skills),
             ),
         )
       conn.commit()
+    except Exception:
+      # The current analysis should not be discarded if history storage is
+      # temporarily down. No resume text is written to the application log.
+      current_app.logger.exception('Could not save resume analysis history.')
+      history_saved = False
     finally:
-      conn.close()
+      if conn:
+        conn.close()
 
-    # -----------------------------
-    # Recommendations
-    # -----------------------------
-    recommendations = generate_recommendations(
-        [], detected_sections, content_score
-    )
-
-    # -----------------------------
-    # Render Results
-    # -----------------------------
     return render_template(
-        'resume/result.html',
-        ats_score=ats_score,
-        ai_quality_score=ai_quality_score,
-        career_domain=career_domain,
-        ai_recommended_roles=ai_recommended_roles,
-        student_id=session.get('student_id'),
-        recommended_jobs=recommended_jobs,
-        detected_skills=detected_skills,
-        matched_skills=all_skills,
-        missing_skills=[],
-        detected_sections=detected_sections,
-        section_score=section_score,
-        skill_score=skill_score,
-        content_score=content_score,
-        recommendations=recommendations,
+        'resume/result.html', ai_feedback=ai_feedback, history_saved=history_saved
     )
 
   return render_template('resume/upload.html')
@@ -208,11 +205,6 @@ def resume_history():
                 SELECT
                     analysis_id,
                     resume_filename,
-                    ats_score,
-                    jd_match_percentage,
-                    skill_score,
-                    section_score,
-                    content_score,
                     created_at
                 FROM resume_analysis
                 WHERE student_id = %s

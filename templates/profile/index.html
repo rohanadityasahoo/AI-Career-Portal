@@ -1,444 +1,211 @@
 {% extends "layouts/base.html" %}
 
 {% block title %}
-My Profile
+My Profile | CareerPilot AI
 {% endblock %}
 
 {% block content %}
 
-<div class="container py-5">
+<section class="profile-page">
+    <div class="container py-5">
+        <div class="profile-shell mx-auto">
 
-    <div class="row justify-content-center">
-
-        <div class="col-lg-9">
-
-            <div class="d-flex justify-content-between align-items-center mb-4">
-
+            <header class="profile-hero">
                 <div>
-                    <h2 class="fw-bold mb-1">
-                        My Profile
-                    </h2>
-
-                    <p class="text-muted mb-0">
-                        Manage your personal, academic and career information.
-                    </p>
+                    <span class="profile-kicker">Your career workspace</span>
+                    <h1>My Profile</h1>
+                    <p>Keep your academic and career details current so CareerPilot can give you more relevant guidance.</p>
                 </div>
+                <div class="profile-completion" aria-label="Profile completion">
+                    <div class="profile-completion-value">{{ profile_completion }}<span>%</span></div>
+                    <div>
+                        <strong>Profile strength</strong>
+                        <span>{{ completed_fields }} of {{ total_profile_fields }} details complete</span>
+                    </div>
+                    <div class="progress" role="progressbar" aria-label="Profile completion"
+                         aria-valuenow="{{ profile_completion }}" aria-valuemin="0" aria-valuemax="100">
+                        <div class="progress-bar" style="width: {{ profile_completion }}%"></div>
+                    </div>
+                </div>
+            </header>
 
-            </div>
+            {% if error %}
+            <div class="alert alert-danger profile-alert" role="alert">{{ error }}</div>
+            {% endif %}
 
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% for category, message in messages %}
+                <div class="alert alert-{{ 'success' if category == 'success' else 'info' }} profile-alert" role="status">
+                    {{ message }}
+                </div>
+                {% endfor %}
+            {% endwith %}
 
-            <form method="POST" enctype="multipart/form-data">
+            <form method="POST" enctype="multipart/form-data" data-profile-form>
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 
-                <!-- ========================= -->
-                <!-- Profile Photo -->
-                <!-- ========================= -->
-
-                <div class="card shadow-sm mb-4">
-
-                    <div class="card-header bg-white">
-                        <h5 class="mb-0">
-                            Profile Photo
-                        </h5>
+                <section class="profile-form-card profile-photo-card">
+                    <div class="profile-card-heading">
+                        <span class="profile-step">01</span>
+                        <div>
+                            <h2>Your photo</h2>
+                            <p>Add a clear photo so your workspace feels personal.</p>
+                        </div>
                     </div>
 
-                    <div class="card-body text-center">
-
+                    <div class="profile-photo-content">
                         {% if student.profile_photo %}
-
-                            <img
-                                src="{{ url_for('profile.profile_photo', filename=student.profile_photo) }}"
-                                alt="Profile Photo"
-                                class="rounded-circle mb-3"
-                                style="width: 150px; height: 150px; object-fit: cover;"
-                            >
-
+                        <img src="{{ url_for('profile.profile_photo', filename=student.profile_photo) }}"
+                             alt="Profile photo for {{ student.full_name }}" class="profile-avatar"
+                             data-profile-photo-preview>
                         {% else %}
-
-                            <div
-                                class="rounded-circle bg-light border d-flex align-items-center justify-content-center mx-auto mb-3"
-                                style="width: 150px; height: 150px;"
-                            >
-                                <span class="text-muted">
-                                    No Photo
-                                </span>
-                            </div>
-
+                        <div class="profile-avatar profile-avatar-fallback" data-profile-photo-preview aria-label="Profile photo placeholder">
+                            <span>{{ (student.full_name or 'You')[0] | upper }}</span>
+                        </div>
                         {% endif %}
 
-
-                        <div class="mt-2">
-
-                            <label class="form-label fw-semibold">
-                                Change Profile Photo
+                        <div class="profile-photo-upload">
+                            <label for="profile_photo" class="profile-upload-label">
+                                <span>Choose a profile photo</span>
+                                <small>JPG or PNG · maximum 5 MB</small>
                             </label>
-
-                            <input
-                                type="file"
-                                name="profile_photo"
-                                class="form-control"
-                                accept=".jpg,.jpeg,.png"
-                            >
-
-                            <small class="text-muted">
-                                JPG, JPEG or PNG only.
-                            </small>
-
+                            <input type="file" id="profile_photo" name="profile_photo"
+                                   accept="image/jpeg,image/png,.jpg,.jpeg,.png"
+                                   data-profile-photo-input>
+                            <p id="profile-photo-file-name" class="profile-upload-status" aria-live="polite">No new file selected</p>
                         </div>
-
                     </div>
+                </section>
 
-                </div>
-
-                <!-- ========================= -->
-                <!-- Basic Information -->
-                <!-- ========================= -->
-
-                <div class="card shadow-sm mb-4">
-
-                    <div class="card-header bg-white">
-                        <h5 class="mb-0">
-                            Basic Information
-                        </h5>
-                    </div>
-
-                    <div class="card-body">
-
-                        <div class="row g-3">
-
-                            <!-- Full Name -->
-                            <div class="col-md-6">
-
-                                <label class="form-label">
-                                    Full Name
-                                </label>
-
-                                <input
-                                    type="text"
-                                    name="full_name"
-                                    class="form-control"
-                                    value="{{ student.full_name }}"
-                                    required
-                                >
-
-                            </div>
-
-
-                            <!-- Email -->
-                            <div class="col-md-6">
-
-                                <label class="form-label">
-                                    Email
-                                </label>
-
-                                <input
-                                    type="email"
-                                    class="form-control"
-                                    value="{{ student.email }}"
-                                    readonly
-                                >
-
-                                <small class="text-muted">
-                                    Email cannot be changed here.
-                                </small>
-
-                            </div>
-
-
-                            <!-- Phone -->
-                            <div class="col-md-6">
-
-                                <label class="form-label">
-                                    Phone
-                                </label>
-
-                                <input
-                                    type="text"
-                                    name="phone"
-                                    class="form-control"
-                                    value="{{ student.phone }}"
-                                    required
-                                >
-
-                            </div>
-
-
-                            <!-- Gender -->
-                            <div class="col-md-6">
-
-                                <label class="form-label">
-                                    Gender
-                                </label>
-
-                                <select
-                                    name="gender"
-                                    class="form-select"
-                                >
-
-                                    <option value="">
-                                        Select Gender
-                                    </option>
-
-                                    <option
-                                        value="Male"
-                                        {% if student.gender == 'Male' %}selected{% endif %}
-                                    >
-                                        Male
-                                    </option>
-
-                                    <option
-                                        value="Female"
-                                        {% if student.gender == 'Female' %}selected{% endif %}
-                                    >
-                                        Female
-                                    </option>
-
-                                    <option
-                                        value="Other"
-                                        {% if student.gender == 'Other' %}selected{% endif %}
-                                    >
-                                        Other
-                                    </option>
-
-                                </select>
-
-                            </div>
-
+                <section class="profile-form-card">
+                    <div class="profile-card-heading">
+                        <span class="profile-step">02</span>
+                        <div>
+                            <h2>Personal details</h2>
+                            <p>Your contact details are kept private and used only for your account.</p>
                         </div>
-
                     </div>
 
-                </div>
-
-
-                <!-- ========================= -->
-                <!-- Academic Information -->
-                <!-- ========================= -->
-
-                <div class="card shadow-sm mb-4">
-
-                    <div class="card-header bg-white">
-                        <h5 class="mb-0">
-                            Academic Information
-                        </h5>
-                    </div>
-
-                    <div class="card-body">
-
-                        <div class="row g-3">
-
-                            <!-- College -->
-                            <div class="col-md-6">
-
-                                <label class="form-label">
-                                    College / University
-                                </label>
-
-                                <input
-                                    type="text"
-                                    name="college"
-                                    class="form-control"
-                                    value="{{ student.college or '' }}"
-                                >
-
-                            </div>
-
-
-                            <!-- Branch -->
-                            <div class="col-md-6">
-
-                                <label class="form-label">
-                                    Branch / Course
-                                </label>
-
-                                <input
-                                    type="text"
-                                    name="branch"
-                                    class="form-control"
-                                    value="{{ student.branch or '' }}"
-                                >
-
-                            </div>
-
-
-                            <!-- Year -->
-                            <div class="col-md-6">
-
-                                <label class="form-label">
-                                    Current Year
-                                </label>
-
-                                <input
-                                    type="number"
-                                    name="year"
-                                    class="form-control"
-                                    value="{{ student.year or '' }}"
-                                    min="1"
-                                    max="10"
-                                >
-
-                            </div>
-
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="full_name" class="form-label">Full name <span aria-hidden="true">*</span></label>
+                            <input type="text" id="full_name" name="full_name" class="form-control"
+                                   value="{{ student.full_name or '' }}" maxlength="100" autocomplete="name" required>
                         </div>
-
-                    </div>
-
-                </div>
-
-
-                <!-- ========================= -->
-                <!-- Career Information -->
-                <!-- ========================= -->
-
-                <div class="card shadow-sm mb-4">
-
-                    <div class="card-header bg-white">
-                        <h5 class="mb-0">
-                            Career Information
-                        </h5>
-                    </div>
-
-                    <div class="card-body">
-
-                        <div class="row g-3">
-
-                            <!-- Current Semester -->
-                            <div class="col-md-6">
-
-                                <label class="form-label">
-                                    Current Semester
-                                </label>
-
-                                <input
-                                    type="text"
-                                    name="semester"
-                                    class="form-control"
-                                    value="{{ career_profile.semester if career_profile else '' }}"
-                                    placeholder="Semester"
-                                >
-
-                            </div>
-
-
-                            <!-- CGPA -->
-                            <div class="col-md-6">
-
-                                <label class="form-label">
-                                    CGPA
-                                </label>
-
-                                <input
-                                    type="number"
-                                    name="cgpa"
-                                    class="form-control"
-                                    value="{{ career_profile.cgpa if career_profile else '' }}"
-                                    step="0.01"
-                                    min="0"
-                                    max="10"
-                                    placeholder="CGPA (0.00 - 10.00)"
-                                >
-
-                            </div>
-
-
-                            <!-- Career Goal -->
-                            <div class="col-md-6">
-
-                                <label class="form-label">
-                                    Career Goal
-                                </label>
-
-                                <input
-                                    type="text"
-                                    name="career_goal"
-                                    class="form-control"
-                                    value="{{ career_profile.career_goal if career_profile else '' }}"
-                                    placeholder="Enter your career goal"
-                                >
-
-                            </div>
-
-
-                            <!-- Target Job Role -->
-                            <div class="col-md-6">
-
-                                <label class="form-label">
-                                    Target Job Role
-                                </label>
-
-                                <input
-                                    type="text"
-                                    name="target_role"
-                                    class="form-control"
-                                    value="{{ career_profile.target_role if career_profile else '' }}"
-                                    placeholder="Enter your target job role"
-                                >
-
-                            </div>
-
-
-                            <!-- Preferred Industry -->
-                            <div class="col-md-6">
-
-                                <label class="form-label">
-                                    Preferred Industry
-                                </label>
-
-                                <input
-                                    type="text"
-                                    name="preferred_industry"
-                                    class="form-control"
-                                    value="{{ career_profile.preferred_industry if career_profile else '' }}"
-                                    placeholder="Enter your preferred industry"
-                                >
-
-                            </div>
-
-
-                            <!-- Preferred Location -->
-                            <div class="col-md-6">
-
-                                <label class="form-label">
-                                    Preferred Work Location
-                                </label>
-
-                                <input
-                                    type="text"
-                                    name="preferred_location"
-                                    class="form-control"
-                                    value="{{ career_profile.preferred_location if career_profile else '' }}"
-                                    placeholder="Enter your preferred work location"
-                                >
-
-                            </div>
-
+                        <div class="col-md-6">
+                            <label for="email" class="form-label">Email address</label>
+                            <input type="email" id="email" class="form-control" value="{{ student.email or '' }}" readonly>
+                            <small class="profile-field-hint">Email cannot be changed here.</small>
                         </div>
+                        <div class="col-md-6">
+                            <label for="phone" class="form-label">Phone number <span aria-hidden="true">*</span></label>
+                            <input type="tel" id="phone" name="phone" class="form-control"
+                                   value="{{ student.phone or '' }}" inputmode="tel" autocomplete="tel"
+                                   pattern="[0-9+() -]{7,20}" maxlength="20" required>
+                            <small class="profile-field-hint">Use 7 to 15 digits.</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="gender" class="form-label">Gender <span class="profile-optional">Optional</span></label>
+                            <select id="gender" name="gender" class="form-select">
+                                <option value="">Prefer not to say</option>
+                                <option value="Male" {% if student.gender == 'Male' %}selected{% endif %}>Male</option>
+                                <option value="Female" {% if student.gender == 'Female' %}selected{% endif %}>Female</option>
+                                <option value="Other" {% if student.gender == 'Other' %}selected{% endif %}>Other</option>
+                            </select>
+                        </div>
+                    </div>
+                </section>
 
+                <section class="profile-form-card">
+                    <div class="profile-card-heading">
+                        <span class="profile-step">03</span>
+                        <div>
+                            <h2>Academic background</h2>
+                            <p>These details help tailor resume feedback and preparation recommendations.</p>
+                        </div>
                     </div>
 
-                </div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="college" class="form-label">College / university <span class="profile-optional">Optional</span></label>
+                            <input type="text" id="college" name="college" class="form-control"
+                                   value="{{ student.college or '' }}" maxlength="150" autocomplete="organization">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="branch" class="form-label">Branch / course <span class="profile-optional">Optional</span></label>
+                            <input type="text" id="branch" name="branch" class="form-control"
+                                   value="{{ student.branch or '' }}" maxlength="100">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="year" class="form-label">Current year <span class="profile-optional">Optional</span></label>
+                            <select id="year" name="year" class="form-select">
+                                <option value="">Select year</option>
+                                {% for year_value in range(1, 9) %}
+                                <option value="{{ year_value }}" {% if student.year|string == year_value|string %}selected{% endif %}>Year {{ year_value }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="semester" class="form-label">Current semester <span class="profile-optional">Optional</span></label>
+                            <input type="text" id="semester" name="semester" class="form-control"
+                                   value="{{ career_profile.semester or '' }}" maxlength="30" placeholder="e.g. Semester 6">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="cgpa" class="form-label">CGPA <span class="profile-optional">Optional</span></label>
+                            <input type="number" id="cgpa" name="cgpa" class="form-control"
+                                   value="{{ career_profile.cgpa if career_profile.cgpa is not none else '' }}"
+                                   step="0.01" min="0" max="10" inputmode="decimal" placeholder="0.00–10.00">
+                        </div>
+                    </div>
+                </section>
 
+                <section class="profile-form-card">
+                    <div class="profile-card-heading">
+                        <span class="profile-step">04</span>
+                        <div>
+                            <h2>Career direction</h2>
+                            <p>Share your goals to make roadmaps and AI guidance more relevant.</p>
+                        </div>
+                    </div>
 
-                <!-- ========================= -->
-                <!-- Save -->
-                <!-- ========================= -->
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="career_goal" class="form-label">Career goal <span class="profile-optional">Optional</span></label>
+                            <input type="text" id="career_goal" name="career_goal" class="form-control"
+                                   value="{{ career_profile.career_goal or '' }}" maxlength="150"
+                                   placeholder="e.g. Build a career in product engineering">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="target_role" class="form-label">Target job role <span class="profile-optional">Optional</span></label>
+                            <input type="text" id="target_role" name="target_role" class="form-control"
+                                   value="{{ career_profile.target_role or '' }}" maxlength="150"
+                                   placeholder="e.g. Python developer">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="preferred_industry" class="form-label">Preferred industry <span class="profile-optional">Optional</span></label>
+                            <input type="text" id="preferred_industry" name="preferred_industry" class="form-control"
+                                   value="{{ career_profile.preferred_industry or '' }}" maxlength="150"
+                                   placeholder="e.g. Information technology">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="preferred_location" class="form-label">Preferred work location <span class="profile-optional">Optional</span></label>
+                            <input type="text" id="preferred_location" name="preferred_location" class="form-control"
+                                   value="{{ career_profile.preferred_location or '' }}" maxlength="150"
+                                   placeholder="e.g. Bhubaneswar or remote">
+                        </div>
+                    </div>
+                </section>
 
-                <div class="d-flex justify-content-end">
-
-                    <button
-                        type="submit"
-                        class="btn btn-primary px-4"
-                    >
-                        Save Changes
+                <div class="profile-save-bar">
+                    <p>Changes are saved only when you select <strong>Save profile</strong>.</p>
+                    <button type="submit" class="btn btn-primary profile-save-button" data-profile-submit>
+                        <span>Save profile</span>
+                        <span aria-hidden="true">→</span>
                     </button>
-
                 </div>
-
             </form>
-
         </div>
-
     </div>
-
-</div>
+</section>
 
 {% endblock %}

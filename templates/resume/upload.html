@@ -1,73 +1,92 @@
 {% extends "layouts/base.html" %}
 
-{% block title %}
-Resume Analyzer | CareerPilot AI
-{% endblock %}
+{% block title %}AI Resume Analyzer | CareerPilot AI{% endblock %}
 
 {% block content %}
-
-<div class="container mt-5">
-
-    <div class="row justify-content-center">
-
-        <div class="col-lg-8">
-
-            <div class="card shadow-sm">
-
-                <div class="card-body p-4">
-
-                    <h2 class="mb-2">
-                        AI Resume Analyzer
-                    </h2>
-
-                    <p class="text-muted mb-4">
-                        Upload your resume and let AI analyze its ATS compatibility, structure, skills, content, and overall quality.
-                    </p>
-
-                    <form method="POST"
-                          enctype="multipart/form-data">
-
-                        <!-- Resume -->
-                        <div class="mb-3">
-
-                            <label for="resume" class="form-label">
-                                Resume PDF
-                            </label>
-
-                            <input type="file"
-                                   id="resume"
-                                   name="resume"
-                                   class="form-control"
-                                   accept=".pdf"
-                                   required>
-
-                        </div>
-
-
-                        <button type="submit"
-                                class="btn btn-primary w-100">
-
-                            Analyze Resume
-
-                        </button>
-
-                        <a href="{{ url_for('resume.resume_history') }}"
-                        class="btn btn-outline-secondary w-100 mt-2">
-
-                            View Analysis History
-
-                        </a>
-
-                    </form>
-
+<div class="resume-upload-page">
+    <div class="container py-5">
+        <div class="resume-upload-hero">
+            <div class="resume-eyebrow">CareerPilot AI</div>
+            <div class="row align-items-end g-3">
+                <div class="col-lg-8">
+                    <h1>Turn your resume into a clearer next step.</h1>
+                    <p class="mb-0">Get an evidence-based readiness snapshot, detailed editing advice, and—if you add a role or job description—a more focused review.</p>
                 </div>
-
+                <div class="col-lg-4">
+                    <div class="resume-privacy-note">
+                        <strong>Privacy-first upload</strong>
+                        <span>Your source PDF is deleted after text is read.</span>
+                    </div>
+                </div>
             </div>
-
         </div>
 
+        <div class="row g-4 mt-1 align-items-start">
+            <div class="col-lg-8">
+                <section class="card resume-form-card shadow-sm border-0">
+                    <div class="card-body p-4 p-md-5">
+                        <div class="d-flex align-items-start gap-3 mb-4">
+                            <div class="resume-step-number">1</div>
+                            <div>
+                                <h2 class="h4 mb-1">Upload and tailor your review</h2>
+                                <p class="text-muted mb-0">A target role and job description are optional, but they make the recommendations more relevant.</p>
+                            </div>
+                        </div>
+
+                        {% if error %}
+                        <div class="alert alert-danger" role="alert">{{ error }}</div>
+                        {% endif %}
+
+                        <form method="POST" enctype="multipart/form-data" data-resume-form>
+                            <div class="mb-4">
+                                <label for="resume" class="form-label fw-semibold">Resume PDF <span class="text-danger">*</span></label>
+                                <label class="resume-dropzone" for="resume">
+                                    <span class="resume-dropzone-icon" aria-hidden="true">↑</span>
+                                    <span class="resume-dropzone-title">Choose your resume PDF</span>
+                                    <span class="resume-dropzone-copy" id="resume-file-name">PDF only · maximum 16 MB</span>
+                                </label>
+                                <input class="visually-hidden" type="file" id="resume" name="resume" accept="application/pdf,.pdf" required data-resume-file>
+                            </div>
+
+                            <div class="row g-3">
+                                <div class="col-md-5">
+                                    <label for="target_role" class="form-label fw-semibold">Target role <span class="text-muted fw-normal">(optional)</span></label>
+                                    <input type="text" class="form-control" id="target_role" name="target_role" maxlength="120" placeholder="e.g. Data Analyst" value="{{ target_role|default('', true) }}">
+                                    <div class="form-text">Used to focus the coaching.</div>
+                                </div>
+                                <div class="col-md-7">
+                                    <label for="job_description" class="form-label fw-semibold">Job description <span class="text-muted fw-normal">(optional)</span></label>
+                                    <textarea class="form-control" id="job_description" name="job_description" rows="3" maxlength="8000" placeholder="Paste the role requirements to compare visible skills."></textarea>
+                                    <div class="form-text">We compare recognisable skills only; this is not a hiring prediction.</div>
+                                </div>
+                            </div>
+
+                            <div class="resume-form-footer mt-4">
+                                <p class="small text-muted mb-0">Your diagnostic scores are based on extracted text and common resume signals. AI suggestions are editorial guidance—always keep your resume truthful.</p>
+                                <button type="submit" class="btn btn-primary resume-submit" data-resume-submit>
+                                    <span>Analyze my resume</span>
+                                    <span aria-hidden="true">→</span>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </section>
+            </div>
+
+            <aside class="col-lg-4">
+                <section class="resume-info-card">
+                    <div class="resume-step-number">2</div>
+                    <h2 class="h5 mt-3">What you’ll receive</h2>
+                    <ul class="resume-feature-list">
+                        <li><span>✓</span> ATS-readiness and content signals</li>
+                        <li><span>✓</span> Section and skill visibility checks</li>
+                        <li><span>✓</span> Detailed, truthful rewrite guidance</li>
+                        <li><span>✓</span> Job-skill comparison when provided</li>
+                    </ul>
+                </section>
+                <a href="{{ url_for('resume.resume_history') }}" class="btn btn-outline-primary w-100 mt-3">View analysis history</a>
+            </aside>
+        </div>
     </div>
-
 </div>
-
 {% endblock %}

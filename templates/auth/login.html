@@ -6,53 +6,76 @@ Login | CareerPilot AI
 
 {% block content %}
 
-<div class="container mt-5">
+<section class="auth-login-page py-4 py-lg-5">
+    <div class="container">
+        <div class="auth-login-shell mx-auto">
+            <div class="row g-0">
+                <aside class="col-lg-5 auth-login-aside">
+                    <div>
+                        <span class="auth-login-eyebrow">CareerPilot AI</span>
+                        <h1>Keep building the career you want.</h1>
+                        <p>Return to your personalised workspace for focused guidance, practice, and evidence of your progress.</p>
+                    </div>
 
-    <div class="row justify-content-center">
+                    <ul class="auth-login-benefits">
+                        <li><span aria-hidden="true">✓</span><div><strong>Resume clarity</strong><small>Turn feedback into focused improvements.</small></div></li>
+                        <li><span aria-hidden="true">✓</span><div><strong>Interview practice</strong><small>Build stronger, more structured answers.</small></div></li>
+                        <li><span aria-hidden="true">✓</span><div><strong>Career direction</strong><small>Keep your next step visible and practical.</small></div></li>
+                    </ul>
 
-        <div class="col-md-6">
+                    <p class="auth-login-aside-note">Your workspace is ready when you are.</p>
+                </aside>
 
-            <div class="card shadow">
+                <div class="col-lg-7 auth-login-main">
+                    <div class="auth-login-form-wrap">
+                        <span class="auth-login-kicker">Student sign in</span>
+                        <h2>Welcome back</h2>
+                        <p class="auth-login-intro">Use the email address and password you registered with.</p>
 
-                <div class="card-body">
+                        {% with messages = get_flashed_messages(with_categories=true) %}
+                            {% for category, message in messages %}
+                            <div class="alert alert-{{ 'success' if category == 'success' else 'info' }} auth-login-alert" role="status">
+                                {{ message }}
+                            </div>
+                            {% endfor %}
+                        {% endwith %}
 
-                    <h2 class="text-center mb-4">
-                        Student Login
-                    </h2>
-
-                    <form method="POST">
-
-                        <div class="mb-3">
-                            <label>Email</label>
-                            <input type="email"
-                                   name="email"
-                                   class="form-control"
-                                   required>
+                        {% if error %}
+                        <div class="alert alert-danger auth-login-alert" role="alert">
+                            {{ error }}
                         </div>
+                        {% endif %}
 
-                        <div class="mb-3">
-                            <label>Password</label>
-                            <input type="password"
-                                   name="password"
-                                   class="form-control"
-                                   required>
-                        </div>
+                        <form method="POST" data-login-form>
+                            <div class="auth-login-field">
+                                <label for="email">Email address</label>
+                                <input id="email" type="email" name="email" class="form-control" value="{{ email|default('') }}" autocomplete="email" inputmode="email" required autofocus placeholder="you@example.com">
+                            </div>
 
-                        <button type="submit"
-                                class="btn btn-success w-100">
-                            Login
-                        </button>
+                            <div class="auth-login-field">
+                                <div class="auth-login-label-row">
+                                    <label for="password">Password</label>
+                                    <span>Case-sensitive</span>
+                                </div>
+                                <div class="auth-password-control">
+                                    <input id="password" type="password" name="password" class="form-control" autocomplete="current-password" required placeholder="Enter your password">
+                                    <button class="auth-password-toggle" type="button" data-password-toggle aria-controls="password" aria-label="Show password">Show</button>
+                                </div>
+                            </div>
 
-                    </form>
+                            <button type="submit" class="btn btn-primary auth-login-submit" data-login-submit>
+                                <span>Sign in to CareerPilot</span><span aria-hidden="true">→</span>
+                            </button>
+                        </form>
 
+                        <div class="auth-login-divider"><span>New to CareerPilot?</span></div>
+                        <a class="btn btn-outline-primary auth-register-link" href="{{ url_for('auth.register') }}">Create your student account</a>
+                        <p class="auth-login-help">Having trouble? Double-check your registered email address and password, then try again.</p>
+                    </div>
                 </div>
-
             </div>
-
         </div>
-
     </div>
-
-</div>
+</section>
 
 {% endblock %}

@@ -6,305 +6,149 @@ About | CareerPilot AI
 
 {% block content %}
 
-<div class="container mt-5 mb-5">
+<section class="about-page">
+    <div class="container py-5">
 
-    <!-- Project Introduction -->
-    <div class="text-center mb-5">
-        <span class="badge bg-primary mb-3">
-            About Our Project
-        </span>
+        <header class="row align-items-center g-4 g-lg-5 about-page-hero">
+            <div class="col-lg-6">
+                <span class="about-section-kicker">About CareerPilot AI</span>
+                <h1>A clearer path from campus to a career you’ll love.</h1>
+                <p class="about-page-intro">
+                    CareerPilot AI brings the important parts of career preparation into one focused workspace.
+                    Students can strengthen resumes, practise interviews, explore career paths, and get useful
+                    guidance without piecing together advice from different places.
+                </p>
+                <p class="about-page-intro mb-4">
+                    We use AI to make every next step more practical, personal, and easier to act on—so you can
+                    spend less time guessing and more time growing.
+                </p>
 
-        <h1 class="fw-bold">
-            CareerPilot AI
-        </h1>
-
-        <p class="lead text-muted mt-3">
-            An AI-powered career guidance platform designed to help
-            students prepare for their careers through intelligent
-            resume analysis, interview practice, career planning,
-            job recommendations and personalized guidance.
-        </p>
-    </div>
-
-
-    <!-- About Project -->
-    <div class="card shadow mb-5">
-        <div class="card-body p-4">
-
-            <h2 class="mb-3">
-                About CareerPilot AI
-            </h2>
-
-            <p>
-                CareerPilot AI is a group project developed to provide
-                students with an integrated platform for career
-                preparation and guidance.
-            </p>
-
-            <p>
-                The platform combines multiple career-focused modules,
-                including ATS Resume Analysis, AI Interview Practice,
-                Job Recommendation, Career Roadmap Generation,
-                Placement Prediction and an AI Career Chatbot.
-            </p>
-
-        </div>
-    </div>
-
-
-    <!-- Project Objectives -->
-    <div class="card shadow mb-5">
-        <div class="card-body p-4">
-
-            <h2 class="mb-4">
-                Project Objectives
-            </h2>
-
-            <ul>
-                <li class="mb-2">
-                    Analyze resumes using ATS-based techniques.
-                </li>
-
-                <li class="mb-2">
-                    Identify relevant skills from resumes.
-                </li>
-
-                <li class="mb-2">
-                    Recommend suitable career opportunities.
-                </li>
-
-                <li class="mb-2">
-                    Provide AI-assisted interview practice.
-                </li>
-
-                <li class="mb-2">
-                    Generate career learning roadmaps.
-                </li>
-
-                <li class="mb-2">
-                    Provide personalized career guidance through
-                    an AI chatbot.
-                </li>
-            </ul>
-
-        </div>
-    </div>
-
-
-    <!-- Our Team -->
-    <div class="text-center mb-4">
-
-        <h2 class="fw-bold">
-            Meet Our Team
-        </h2>
-
-        <p class="text-muted">
-            The team behind CareerPilot AI
-        </p>
-
-    </div>
-
-
-    <div class="row g-4">
-
-
-        <!-- Rohan -->
-        <div class="col-md-6 col-lg-3">
-
-            <div class="card shadow h-100 text-center">
-
-                <div class="card-body">
-
-                    <div class="mb-3">
-
-                        <div
-                            class="rounded-circle bg-light d-flex
-                                   align-items-center justify-content-center
-                                   mx-auto"
-                            style="width: 130px; height: 130px;"
-                        >
-                            <span class="text-muted">
-                                Photo
-                            </span>
+                <div class="about-highlights">
+                    <div class="about-highlight">
+                        <span class="about-highlight-number">01</span>
+                        <div>
+                            <h2>Built for students</h2>
+                            <p>Simple tools for the moments that shape your first opportunity.</p>
                         </div>
-
                     </div>
-
-                    <h5 class="fw-bold">
-                        Rohan Aditya Sahoo
-                    </h5>
-
-                    <p class="text-primary fw-semibold">
-                        Project Lead & Backend Developer
-                    </p>
-
-                    <hr>
-
-                    <p class="mb-1">
-                        <strong>Roll No:</strong>
-                        24057061
-                    </p>
-
-                    <p class="mb-1">
-                        <strong>Phone:</strong>
-                        +91 8260801239
-                    </p>
-
+                    <div class="about-highlight">
+                        <span class="about-highlight-number">02</span>
+                        <div>
+                            <h2>Guidance that moves you forward</h2>
+                            <p>Clear feedback and personalised next steps—not generic career advice.</p>
+                        </div>
+                    </div>
                 </div>
-
             </div>
 
-        </div>
-
-
-        <!-- Jogesh -->
-        <div class="col-md-6 col-lg-3">
-
-            <div class="card shadow h-100 text-center">
-
-                <div class="card-body">
-
-                    <div class="mb-3">
-
-                        <div
-                            class="rounded-circle bg-light d-flex
-                                   align-items-center justify-content-center
-                                   mx-auto"
-                            style="width: 130px; height: 130px;"
-                        >
-                            <span class="text-muted">
-                                Photo
-                            </span>
-                        </div>
-
+            <div class="col-lg-6">
+                <!--
+                    Replace this placeholder with a full-size casual team photo.
+                    <img src="{{ url_for('static', filename='images/about-casual-photo.jpg') }}"
+                         class="about-page-photo" alt="The CareerPilot AI team">
+                -->
+                <div class="about-page-photo-frame">
+                    <div class="about-page-photo-placeholder" role="img"
+                         aria-label="Reserved for a full-size casual CareerPilot AI team photo">
+                        <span class="about-page-photo-label">Your casual team photo</span>
+                        <span class="about-page-photo-hint">Full-size image space</span>
                     </div>
-
-                    <h5 class="fw-bold">
-                        Jogesh Dash
-                    </h5>
-
-                    <p class="text-primary fw-semibold">
-                        Frontend & UI/UX Developer
-                    </p>
-
-                    <hr>
-
-                    <p class="mb-1">
-                        <strong>Roll No:</strong>
-                        24057038
-                    </p>
-
-                    <p class="mb-1">
-                        <strong>Phone:</strong>
-                        +91 7847879802
-                    </p>
-
                 </div>
+            </div>
+        </header>
 
+        <div class="row g-4 about-details-row">
+            <div class="col-lg-6">
+                <section class="about-info-card h-100">
+                    <span class="about-section-kicker">Our project</span>
+                    <h2>Career preparation, brought together.</h2>
+                    <p>
+                        CareerPilot AI is a group project created to give students an integrated platform for
+                        career preparation and guidance. It connects everyday career tasks in one place, from the
+                        first resume draft to interview readiness.
+                    </p>
+                    <p class="mb-0">
+                        The platform combines ATS Resume Analysis, AI Interview Practice, Career Roadmap
+                        Generation, Placement Prediction, and an AI Career Chatbot.
+                    </p>
+                </section>
             </div>
 
+            <div class="col-lg-6">
+                <section class="about-info-card h-100">
+                    <span class="about-section-kicker">What we aim to do</span>
+                    <h2>Practical support at every step.</h2>
+                    <ul class="about-objective-list">
+                        <li>Analyse resumes with ATS-focused feedback and skill insights.</li>
+                        <li>Help students identify relevant roles and learning goals.</li>
+                        <li>Build confidence through AI-assisted interview practice.</li>
+                        <li>Create personalised roadmaps and career guidance.</li>
+                    </ul>
+                </section>
+            </div>
         </div>
 
-
-        <!-- Subhashree -->
-        <div class="col-md-6 col-lg-3">
-
-            <div class="card shadow h-100 text-center">
-
-                <div class="card-body">
-
-                    <div class="mb-3">
-
-                        <div
-                            class="rounded-circle bg-light d-flex
-                                   align-items-center justify-content-center
-                                   mx-auto"
-                            style="width: 130px; height: 130px;"
-                        >
-                            <span class="text-muted">
-                                Photo
-                            </span>
-                        </div>
-
-                    </div>
-
-                    <h5 class="fw-bold">
-                        Subhashree Subhasmita Behera
-                    </h5>
-
-                    <p class="text-primary fw-semibold">
-                        Database & Testing Developer
-                    </p>
-
-                    <hr>
-
-                    <p class="mb-1">
-                        <strong>Roll No:</strong>
-                        24057082
-                    </p>
-
-                    <p class="mb-1">
-                        <strong>Phone:</strong>
-                        +91 8260564192
-                    </p>
-
+        <section class="about-team-section">
+            <div class="about-team-heading">
+                <div>
+                    <span class="about-section-kicker">The people behind it</span>
+                    <h2>Meet our team</h2>
                 </div>
-
+                <p>We combine product thinking, design, data, and AI to make career preparation feel more approachable.</p>
             </div>
 
-        </div>
-
-
-        <!-- Biplab -->
-        <div class="col-md-6 col-lg-3">
-
-            <div class="card shadow h-100 text-center">
-
-                <div class="card-body">
-
-                    <div class="mb-3">
-
-                        <div
-                            class="rounded-circle bg-light d-flex
-                                   align-items-center justify-content-center
-                                   mx-auto"
-                            style="width: 130px; height: 130px;"
-                        >
-                            <span class="text-muted">
-                                Photo
-                            </span>
+            <div class="row g-4">
+                <div class="col-md-6 col-xl-3">
+                    <article class="about-team-card h-100 text-center">
+                        <div class="about-team-avatar">Photo</div>
+                        <h3>Rohan Aditya Sahoo</h3>
+                        <p class="about-team-role">Project Lead &amp; Backend Developer</p>
+                        <div class="about-team-meta">
+                            <span>Roll No. 24057061</span>
+                            <span>+91 8260801239</span>
                         </div>
-
-                    </div>
-
-                    <h5 class="fw-bold">
-                        Biplab Dash
-                    </h5>
-
-                    <p class="text-primary fw-semibold">
-                        AI/ML Developer
-                    </p>
-
-                    <hr>
-
-                    <p class="mb-1">
-                        <strong>Roll No:</strong>
-                        24057027
-                    </p>
-
-                    <p class="mb-1">
-                        <strong>Phone:</strong>
-                        +91 7205456000
-                    </p>
-
+                    </article>
                 </div>
 
-            </div>
+                <div class="col-md-6 col-xl-3">
+                    <article class="about-team-card h-100 text-center">
+                        <div class="about-team-avatar">Photo</div>
+                        <h3>Jogesh Dash</h3>
+                        <p class="about-team-role">Frontend &amp; UI/UX Developer</p>
+                        <div class="about-team-meta">
+                            <span>Roll No. 24057038</span>
+                            <span>+91 7847879802</span>
+                        </div>
+                    </article>
+                </div>
 
-        </div>
+                <div class="col-md-6 col-xl-3">
+                    <article class="about-team-card h-100 text-center">
+                        <div class="about-team-avatar">Photo</div>
+                        <h3>Subhashree Subhasmita Behera</h3>
+                        <p class="about-team-role">Database &amp; Testing Developer</p>
+                        <div class="about-team-meta">
+                            <span>Roll No. 24057082</span>
+                            <span>+91 8260564192</span>
+                        </div>
+                    </article>
+                </div>
+
+                <div class="col-md-6 col-xl-3">
+                    <article class="about-team-card h-100 text-center">
+                        <div class="about-team-avatar">Photo</div>
+                        <h3>Biplab Dash</h3>
+                        <p class="about-team-role">AI/ML Developer</p>
+                        <div class="about-team-meta">
+                            <span>Roll No. 24057027</span>
+                            <span>+91 7205456000</span>
+                        </div>
+                    </article>
+                </div>
+            </div>
+        </section>
 
     </div>
-
-</div>
+</section>
 
 {% endblock %}
