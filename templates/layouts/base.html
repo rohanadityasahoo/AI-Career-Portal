@@ -30,6 +30,30 @@
 
     {% include "partials/navbar.html" %}
 
+    {% set section_back_url = none %}
+    {% if request.path.startswith("/profile") %}
+        {% set section_back_url = url_for("dashboard.dashboard_home") %}
+    {% elif request.path.startswith("/resume") %}
+        {% set section_back_url = url_for("dashboard.dashboard_home") %}
+    {% elif request.path.startswith("/interview") %}
+        {% set section_back_url = url_for("dashboard.dashboard_home") %}
+    {% elif request.path.startswith("/roadmap") %}
+        {% set section_back_url = url_for("dashboard.dashboard_home") %}
+    {% elif request.path.startswith("/chatbot") %}
+        {% set section_back_url = url_for("dashboard.dashboard_home") %}
+    {% endif %}
+
+    {% if section_back_url %}
+    <div class="section-backbar">
+        <div class="container">
+            <a class="section-back-link" href="{{ section_back_url }}">
+                <span aria-hidden="true">&larr;</span>
+                <span>Back to dashboard</span>
+            </a>
+        </div>
+    </div>
+    {% endif %}
+
     <main>
 
         {% block content %}
