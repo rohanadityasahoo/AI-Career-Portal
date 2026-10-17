@@ -1,6 +1,6 @@
 from functools import wraps
 import re
-from database.db import get_db_connection
+from database.db import ensure_auth_schema, get_db_connection
 from flask import (
     Blueprint,
     flash,
@@ -14,6 +14,18 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 auth = Blueprint('auth', __name__)
 
+PROFILE_TYPES = {'fresher', 'experienced'}
+
+
+def _profile_type(value):
+  """Return a supported profile type, defaulting safely to fresher."""
+  value = (value or '').strip().lower()
+  return value if value in PROFILE_TYPES else 'fresher'
+
+
+def _profile_type_label(value):
+  return 'Working professional' if value == 'experienced' else 'Fresher'
+
 
 def _registration_form_data():
   """Return safe, displayable registration fields without retaining passwords."""
@@ -25,6 +37,7 @@ def _registration_form_data():
       'college': request.form.get('college', '').strip(),
       'branch': request.form.get('branch', '').strip(),
       'year': request.form.get('year', '').strip(),
+      'profile_type': _profile_type(request.form.get('profile_type')),
   }
 
 
@@ -79,8 +92,8 @@ def register():
       return _registration_error('Please enter a valid email address.', form_data)
     if not 7 <= len(phone_digits) <= 15:
       return _registration_error('Please enter a valid phone number with 7 to 15 digits.', form_data)
-    if len(password) < 8:
-      return _registration_error('Your password must contain at least 8 characters.', form_data)
+    if len(password) < 4:
+      return _registration_error('Your password must contain at least 4 characters.', form_data)
     if password != password_confirmation:
       return _registration_error('The passwords do not match. Please re-enter them.', form_data)
     if gender not in {None, 'Male', 'Female', 'Other'}:
@@ -99,6 +112,8 @@ def register():
     try:
       conn = get_db_connection()
       with conn.cursor() as cursor:
+        ensure_auth_schema(cursor)
+        conn.commit()
         # Give a helpful duplicate message before the database's unique
         # constraint has to reject the insertion.
         cursor.execute(
@@ -121,14 +136,16 @@ def register():
         cursor.execute(
             """
                     INSERT INTO students (
-                        full_name, email, phone, password, gender, college, branch, year
-                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                        full_name, email, phone, password, profile_type,
+                        gender, college, branch, year
+                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
                     """,
             (
                 full_name,
                 email,
                 phone_digits,
                 hashed_password,
+                form_data['profile_type'],
                 gender,
                 college,
                 branch,
@@ -159,6 +176,10 @@ def register():
 # ============================================================
 @auth.route('/login', methods=['GET', 'POST'])
 def login():
+  selected_profile_type = _profile_type(
+      request.form.get('profile_type') or request.args.get('profile_type')
+  )
+
   if request.method == 'POST':
     email = request.form.get('email', '').strip().lower()
     password = request.form.get('password', '')
@@ -169,6 +190,7 @@ def login():
               'auth/login.html',
               error='Please provide both your email address and password.',
               email=email,
+              profile_type=selected_profile_type,
           ),
           400,
       )
@@ -178,8 +200,10 @@ def login():
     try:
       conn = get_db_connection()
       with conn.cursor() as cursor:
+        ensure_auth_schema(cursor)
+        conn.commit()
         cursor.execute(
-            'SELECT student_id, full_name, password FROM students WHERE email = %s',
+            'SELECT student_id, full_name, password, profile_type FROM students WHERE email = %s',
             (email,),
         )
         student = cursor.fetchone()
@@ -189,6 +213,7 @@ def login():
               'auth/login.html',
               error='We could not sign you in right now. Please try again shortly.',
               email=email,
+              profile_type=selected_profile_type,
           ),
           503,
       )
@@ -197,10 +222,28 @@ def login():
         conn.close()
 
     if student and check_password_hash(student['password'], password):
+      account_profile_type = _profile_type(student.get('profile_type'))
+      if selected_profile_type != account_profile_type:
+        return (
+            render_template(
+                'auth/login.html',
+                error=(
+                    f'This account belongs to the {_profile_type_label(account_profile_type)} '
+                    f'workspace. Select {_profile_type_label(account_profile_type)} to continue.'
+                ),
+                email=email,
+                profile_type=account_profile_type,
+            ),
+            403,
+        )
+
       # Replace any anonymous or stale session data after authentication.
       session.clear()
       session['student_id'] = student['student_id']
       session['student_name'] = student['full_name']
+      session['profile_type'] = account_profile_type
+      if session['profile_type'] == 'experienced':
+        return redirect(url_for('dashboard.experienced_dashboard'))
       return redirect(url_for('dashboard.dashboard_home'))
 
     return (
@@ -208,11 +251,15 @@ def login():
             'auth/login.html',
             error='The email address or password is incorrect. Please try again.',
             email=email,
+            profile_type=selected_profile_type,
         ),
         401,
     )
 
-  return render_template('auth/login.html')
+  return render_template(
+      'auth/login.html',
+      profile_type=selected_profile_type,
+  )
 
 
 # ============================================================

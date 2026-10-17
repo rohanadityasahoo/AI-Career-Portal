@@ -1,0 +1,59 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Admin Login | CareerPilot AI{% endblock %}
+
+{% block content %}
+<section class="auth-login-page admin-login-page py-4 py-lg-5">
+    <div class="container">
+        <div class="auth-login-shell admin-login-shell mx-auto">
+            <div class="row g-0">
+                <aside class="col-lg-5 auth-login-aside admin-login-aside">
+                    <div>
+                        <span class="auth-login-eyebrow">CareerPilot AI</span>
+                        <h1>Keep the whole career journey moving.</h1>
+                        <p>Manage users, workspace types, and platform activity from one protected control center.</p>
+                    </div>
+                    <ul class="auth-login-benefits">
+                        <li><span aria-hidden="true">01</span><div><strong>User overview</strong><small>See fresher and professional accounts together.</small></div></li>
+                        <li><span aria-hidden="true">02</span><div><strong>Platform control</strong><small>Prepare the tools needed to manage career support.</small></div></li>
+                    </ul>
+                </aside>
+
+                <div class="col-lg-7 auth-login-main">
+                    <div class="auth-login-form-wrap">
+                        <span class="auth-login-kicker">Administrator access</span>
+                        <h2>Admin sign in</h2>
+                        <p class="auth-login-intro">Use the administrator credentials configured for this CareerPilot installation.</p>
+
+                        {% if error %}
+                        <div class="alert alert-danger auth-login-alert" role="alert">{{ error }}</div>
+                        {% endif %}
+
+                        <form method="POST">
+                            <div class="auth-login-field">
+                                <label for="admin-email">Admin email</label>
+                                <input id="admin-email" type="email" name="email" class="form-control" value="{{ email|default('') }}" autocomplete="username" required autofocus placeholder="admin@example.com">
+                            </div>
+
+                            <div class="auth-login-field">
+                                <div class="auth-login-label-row">
+                                    <label for="admin-password">Password</label>
+                                    <span>Protected access</span>
+                                </div>
+                                <div class="auth-password-control">
+                                    <input id="admin-password" type="password" name="password" class="form-control" autocomplete="current-password" required placeholder="Enter admin password">
+                                    <button class="auth-password-toggle" type="button" data-password-toggle aria-controls="admin-password" aria-label="Show password">Show</button>
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary auth-login-submit">Sign in to Admin Dashboard <span aria-hidden="true">→</span></button>
+                        </form>
+
+                        <p class="auth-login-help"><a href="{{ url_for('auth.login') }}">Return to user login</a></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

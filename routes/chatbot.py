@@ -23,10 +23,27 @@ def _student_context():
         with conn.cursor() as cursor:
             cursor.execute(
                 """
-                SELECT s.branch, s.year, p.career_goal, p.target_role,
-                       p.preferred_industry, p.preferred_location
+                SELECT s.profile_type, s.branch, s.year,
+                       COALESCE(fresher_profile.career_goal, professional_profile.career_switch_reason) AS career_goal,
+                       COALESCE(fresher_profile.target_role, professional_profile.target_role) AS target_role,
+                       COALESCE(fresher_profile.preferred_industry, professional_profile.current_industry, professional_profile.target_field) AS preferred_industry,
+                       COALESCE(fresher_profile.preferred_location, professional_profile.preferred_location) AS preferred_location,
+                       professional_profile.current_job_title,
+                       professional_profile.current_company,
+                       professional_profile.key_skills,
+                       professional_profile.job_search_status,
+                       professional_profile.target_companies,
+                       professional_profile.employment_type,
+                       professional_profile.work_preference,
+                       professional_profile.relocation_preference,
+                       professional_profile.career_highlights
                 FROM students AS s
-                LEFT JOIN student_profile AS p ON p.student_id = s.student_id
+                LEFT JOIN student_profile AS fresher_profile
+                    ON fresher_profile.student_id = s.student_id
+                   AND s.profile_type = 'fresher'
+                LEFT JOIN professional_profile
+                    ON professional_profile.student_id = s.student_id
+                   AND s.profile_type = 'experienced'
                 WHERE s.student_id = %s
                 """,
                 (student_id,),

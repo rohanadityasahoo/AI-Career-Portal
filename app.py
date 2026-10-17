@@ -1,6 +1,7 @@
 import os
 from flask import Flask, redirect, render_template, url_for
 from routes.about import about
+from routes.admin import admin
 from routes.auth import auth
 from routes.chatbot import chatbot
 from routes.dashboard import dashboard
@@ -26,6 +27,7 @@ app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024
 # ============================================================
 
 app.register_blueprint(auth)
+app.register_blueprint(admin)
 app.register_blueprint(resume)
 app.register_blueprint(interview)
 app.register_blueprint(profile)

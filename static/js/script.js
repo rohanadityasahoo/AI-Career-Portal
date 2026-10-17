@@ -304,7 +304,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const password = passwordField.value;
         const confirmation = passwordConfirmation.value;
         const score = [
-            password.length >= 8,
+            password.length >= 4,
             /[a-z]/.test(password) && /[A-Z]/.test(password),
             /\d/.test(password),
             /[^A-Za-z0-9]/.test(password),
@@ -316,7 +316,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         if (passwordGuidance) {
             passwordGuidance.textContent = password.length === 0
-                ? "Use 8+ characters with a mix of letters, numbers, and symbols."
+                ? "Use 4+ characters with a mix of letters, numbers, and symbols."
                 : score <= 1
                     ? "Add uppercase letters, numbers, or symbols to strengthen your password."
                     : score <= 3

@@ -1,8 +1,8 @@
 from datetime import datetime
 
 from ai_modules.career_ai import build_dashboard_guidance, generate_dashboard_guidance
-from database.db import ensure_career_roadmaps_table, get_db_connection
-from flask import Blueprint, jsonify, render_template, session, url_for
+from database.db import ensure_auth_schema, ensure_career_roadmaps_table, get_db_connection
+from flask import Blueprint, jsonify, redirect, render_template, session, url_for
 from routes.auth import login_required
 
 
@@ -91,13 +91,33 @@ def _dashboard_snapshot(student_id):
   try:
     with conn.cursor() as cursor:
       ensure_career_roadmaps_table(cursor)
+      ensure_auth_schema(cursor)
+      conn.commit()
 
       cursor.execute(
           """
-          SELECT s.branch, s.year, p.semester, p.cgpa, p.career_goal,
-                 p.target_role, p.preferred_industry
+          SELECT s.profile_type, s.branch, s.year,
+                 fresher_profile.semester, fresher_profile.cgpa,
+                 professional_profile.current_job_title, professional_profile.years_experience,
+                 COALESCE(fresher_profile.career_goal, professional_profile.career_switch_reason) AS career_goal,
+                 COALESCE(fresher_profile.target_role, professional_profile.target_role) AS target_role,
+                 COALESCE(fresher_profile.preferred_industry, professional_profile.current_industry) AS preferred_industry,
+                  COALESCE(fresher_profile.preferred_location, professional_profile.preferred_location) AS preferred_location,
+                  professional_profile.job_search_status,
+                  professional_profile.target_companies,
+                  professional_profile.employment_type,
+                  professional_profile.work_preference,
+                  professional_profile.relocation_preference,
+                  professional_profile.linkedin_url,
+                  professional_profile.portfolio_url,
+                  professional_profile.career_highlights
           FROM students AS s
-          LEFT JOIN student_profile AS p ON p.student_id = s.student_id
+          LEFT JOIN student_profile AS fresher_profile
+              ON fresher_profile.student_id = s.student_id
+             AND s.profile_type = 'fresher'
+          LEFT JOIN professional_profile
+              ON professional_profile.student_id = s.student_id
+             AND s.profile_type = 'experienced'
           WHERE s.student_id = %s
           """,
           (student_id,),
@@ -172,12 +192,23 @@ def _dashboard_snapshot(student_id):
       if len(latest_interviews) > 1
       else None
   )
-  profile_fields = [
-      target_role,
-      profile.get('career_goal'),
-      profile.get('branch'),
-      profile.get('year'),
-  ]
+  profile_type = profile.get('profile_type') or session.get('profile_type', 'fresher')
+  if profile_type == 'experienced':
+    profile_fields = [
+        target_role,
+        profile.get('career_goal'),
+        profile.get('current_job_title'),
+        profile.get('years_experience'),
+        profile.get('preferred_industry'),
+        profile.get('preferred_location'),
+    ]
+  else:
+    profile_fields = [
+        target_role,
+        profile.get('career_goal'),
+        profile.get('branch'),
+        profile.get('year'),
+    ]
   profile_complete = sum(bool(item) for item in profile_fields) >= 3
   milestones = [
       {'label': 'Profile completed', 'complete': profile_complete, 'action_key': 'profile'},
@@ -227,11 +258,22 @@ def _dashboard_snapshot(student_id):
 
   return {
       'profile': {
+          'profile_type': profile_type,
           'target_role': target_role,
           'career_goal': profile.get('career_goal') or '',
           'branch': profile.get('branch') or '',
           'year': profile.get('year') or '',
           'cgpa': _score(profile.get('cgpa')),
+          'current_job_title': profile.get('current_job_title') or '',
+          'years_experience': _score(profile.get('years_experience')),
+          'job_search_status': profile.get('job_search_status') or '',
+          'target_companies': profile.get('target_companies') or '',
+          'employment_type': profile.get('employment_type') or '',
+          'work_preference': profile.get('work_preference') or '',
+          'relocation_preference': profile.get('relocation_preference') or '',
+          'linkedin_url': profile.get('linkedin_url') or '',
+          'portfolio_url': profile.get('portfolio_url') or '',
+          'career_highlights': profile.get('career_highlights') or '',
           'complete': profile_complete,
       },
       'resume': {
@@ -263,6 +305,9 @@ def _dashboard_snapshot(student_id):
 @dashboard.route('/dashboard')
 @login_required
 def dashboard_home():
+  if session.get('profile_type') == 'experienced':
+    return redirect(url_for('dashboard.experienced_dashboard'))
+
   progress = _dashboard_snapshot(session['student_id'])
   guidance = _add_action_links(build_dashboard_guidance(progress))
 
@@ -273,6 +318,20 @@ def dashboard_home():
       guidance=guidance,
       action_links=_action_links(),
       dashboard_ai_url=url_for('dashboard.dashboard_ai_insight'),
+  )
+
+
+@dashboard.route('/dashboard/experienced')
+@login_required
+def experienced_dashboard():
+  if session.get('profile_type') != 'experienced':
+    return redirect(url_for('dashboard.dashboard_home'))
+
+  progress = _dashboard_snapshot(session['student_id'])
+  return render_template(
+      'dashboard/experienced.html',
+      student_name=session.get('student_name', 'Professional'),
+      progress=progress,
   )
 
 

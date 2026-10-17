@@ -1,0 +1,49 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Admin Dashboard | CareerPilot AI{% endblock %}
+
+{% block content %}
+<section class="admin-dashboard-page py-4 py-lg-5">
+    <div class="container">
+        <div class="admin-dashboard-hero">
+            <div>
+                <span class="dashboard-eyebrow">Control center</span>
+                <h1>Good to see you, {{ admin_name }}.</h1>
+                <p>Monitor both career journeys and keep the platform ready for its next learner.</p>
+            </div>
+            <a class="btn btn-outline-primary" href="{{ url_for('admin.admin_logout') }}">Log out</a>
+        </div>
+
+        {% if error %}<div class="alert alert-warning" role="alert">{{ error }}</div>{% endif %}
+
+        <div class="row g-3 mb-4">
+            <div class="col-md-4"><article class="admin-stat-card"><span>Total users</span><strong>{{ stats.total_users }}</strong><small>Registered accounts</small></article></div>
+            <div class="col-md-4"><article class="admin-stat-card admin-stat-card-fresher"><span>Freshers</span><strong>{{ stats.fresher_users }}</strong><small>First-career journeys</small></article></div>
+            <div class="col-md-4"><article class="admin-stat-card admin-stat-card-experienced"><span>Working professionals</span><strong>{{ stats.experienced_users }}</strong><small>Career-switch journeys</small></article></div>
+        </div>
+
+        <article class="card border-0 shadow-sm admin-users-card">
+            <div class="card-body p-4 p-lg-5">
+                <div class="d-flex justify-content-between align-items-start gap-3 mb-4">
+                    <div><div class="dashboard-eyebrow">User management</div><h2 class="h4 mb-1">Recently registered users</h2><p class="text-muted mb-0">The first 50 accounts are shown here for the initial admin view.</p></div>
+                    <span class="dashboard-panel-chip">Live overview</span>
+                </div>
+                {% if users %}
+                <div class="table-responsive">
+                    <table class="table align-middle admin-users-table">
+                        <thead><tr><th>Name</th><th>Email</th><th>Workspace</th><th>Joined</th></tr></thead>
+                        <tbody>
+                        {% for user in users %}
+                        <tr><td><strong>{{ user.full_name }}</strong></td><td>{{ user.email }}</td><td><span class="admin-role-badge admin-role-{{ user.profile_type|default('fresher') }}">{{ 'Working professional' if user.profile_type == 'experienced' else 'Fresher' }}</span></td><td>{{ user.created_at.strftime('%d %b %Y') if user.created_at else '—' }}</td></tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="admin-empty-state">No user accounts are available yet.</div>
+                {% endif %}
+            </div>
+        </article>
+    </div>
+</section>
+{% endblock %}

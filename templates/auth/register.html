@@ -14,11 +14,11 @@ Register | CareerPilot AI
                     <div>
                         <span class="auth-register-eyebrow">CareerPilot AI</span>
                         <h1>Start with a clearer career direction.</h1>
-                        <p>Create your student workspace in a few minutes, then build a practical plan around the career you want.</p>
+                        <p>Create your CareerPilot workspace in a few minutes, then build a practical plan around the career you want.</p>
                     </div>
 
                     <ol class="auth-register-steps">
-                        <li><span>1</span><div><strong>Create your account</strong><small>Start with your basic student details.</small></div></li>
+                        <li><span>1</span><div><strong>Create your account</strong><small>Start with your basic account details.</small></div></li>
                         <li><span>2</span><div><strong>Set your direction</strong><small>Tell CareerPilot about your target role and goals.</small></div></li>
                         <li><span>3</span><div><strong>Build evidence</strong><small>Use the tools to improve, practise, and track progress.</small></div></li>
                     </ol>
@@ -28,18 +28,37 @@ Register | CareerPilot AI
 
                 <div class="col-lg-8 auth-register-main">
                     <div class="auth-register-form-wrap">
-                        <span class="auth-register-kicker">Student registration</span>
+                        {% set requested_profile_type = form_data.profile_type|default(request.args.get('profile_type', 'fresher')) %}
+                        {% set selected_profile_type = 'experienced' if requested_profile_type == 'experienced' else 'fresher' %}
+                        <span class="auth-register-kicker">Build your workspace</span>
                         <h2>Create your account</h2>
-                        <p class="auth-register-intro">Fields marked <span aria-hidden="true">*</span> are required. You can complete the optional profile details now or later.</p>
+                        <p class="auth-register-intro">Choose your career stage first. Fields marked <span aria-hidden="true">*</span> are required.</p>
+
+                        <div class="auth-profile-options" role="group" aria-label="Choose your workspace">
+                            <a class="auth-profile-option{% if selected_profile_type == 'fresher' %} is-selected{% endif %}" href="{{ url_for('auth.register', profile_type='fresher') }}">
+                                <span class="auth-profile-option-icon" aria-hidden="true">01</span>
+                                <span><strong>Fresher</strong><small>Build your first career profile</small></span>
+                            </a>
+                            <a class="auth-profile-option{% if selected_profile_type == 'experienced' %} is-selected{% endif %}" href="{{ url_for('auth.register', profile_type='experienced') }}">
+                                <span class="auth-profile-option-icon" aria-hidden="true">02</span>
+                                <span><strong>Working professional</strong><small>Prepare for a role or field switch</small></span>
+                            </a>
+                        </div>
+
+                        <div class="auth-register-type-note">
+                            <span>Workspace type</span>
+                            <strong>{{ 'Working professional' if selected_profile_type == 'experienced' else 'Fresher' }}</strong>
+                        </div>
 
                         {% if error %}
                         <div class="alert alert-danger auth-register-alert" role="alert">{{ error }}</div>
                         {% endif %}
 
                         <form method="POST" data-register-form>
+                            <input type="hidden" name="profile_type" value="{{ selected_profile_type }}">
                             <div class="auth-register-section">
                                 <div class="auth-register-section-heading">
-                                    <span>01</span><div><h3>Your details</h3><p>Use the contact details associated with your student account.</p></div>
+                                    <span>01</span><div><h3>Your details</h3><p>Use the contact details associated with your account.</p></div>
                                 </div>
                                 <div class="row g-3">
                                     <div class="col-md-6 auth-register-field">
@@ -75,25 +94,26 @@ Register | CareerPilot AI
                                     <div class="col-md-6 auth-register-field">
                                         <label for="password">Password <span>*</span></label>
                                         <div class="auth-password-control">
-                                            <input id="password" type="password" name="password" class="form-control" minlength="8" autocomplete="new-password" required data-register-password placeholder="At least 8 characters">
+                                            <input id="password" type="password" name="password" class="form-control" minlength="4" autocomplete="new-password" required data-register-password placeholder="At least 4 characters">
                                             <button class="auth-password-toggle" type="button" data-register-password-toggle data-password-target="password" aria-controls="password" aria-label="Show password">Show</button>
                                         </div>
                                     </div>
                                     <div class="col-md-6 auth-register-field">
                                         <label for="password_confirmation">Confirm password <span>*</span></label>
                                         <div class="auth-password-control">
-                                            <input id="password_confirmation" type="password" name="password_confirmation" class="form-control" minlength="8" autocomplete="new-password" required data-register-password-confirm placeholder="Re-enter your password">
+                                            <input id="password_confirmation" type="password" name="password_confirmation" class="form-control" minlength="4" autocomplete="new-password" required data-register-password-confirm placeholder="Re-enter your password">
                                             <button class="auth-password-toggle" type="button" data-register-password-toggle data-password-target="password_confirmation" aria-controls="password_confirmation" aria-label="Show password">Show</button>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="auth-password-guidance">
                                     <div class="auth-password-meter" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
-                                    <p data-password-guidance>Use 8+ characters with a mix of letters, numbers, and symbols.</p>
+                                    <p data-password-guidance>Use 4+ characters with a mix of letters, numbers, and symbols.</p>
                                 </div>
                                 <p class="auth-password-match" data-password-match aria-live="polite"></p>
                             </div>
 
+                            {% if selected_profile_type == 'fresher' %}
                             <div class="auth-register-section auth-register-optional">
                                 <div class="auth-register-section-heading">
                                     <span>03</span><div><h3>Academic context</h3><p>Optional details make your starting guidance more relevant.</p></div>
@@ -113,6 +133,7 @@ Register | CareerPilot AI
                                     </div>
                                 </div>
                             </div>
+                            {% endif %}
 
                             <button type="submit" class="btn btn-primary auth-register-submit" data-register-submit>
                                 <span>Create my account</span><span aria-hidden="true">→</span>

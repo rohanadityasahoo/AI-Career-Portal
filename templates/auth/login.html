@@ -28,9 +28,21 @@ Login | CareerPilot AI
 
                 <div class="col-lg-7 auth-login-main">
                     <div class="auth-login-form-wrap">
-                        <span class="auth-login-kicker">Student sign in</span>
+                        {% set selected_profile_type = profile_type|default('fresher') %}
+                        <span class="auth-login-kicker">Choose your workspace</span>
                         <h2>Welcome back</h2>
-                        <p class="auth-login-intro">Use the email address and password you registered with.</p>
+                        <p class="auth-login-intro">Select the path that matches your career stage, then sign in.</p>
+
+                        <div class="auth-profile-options" role="group" aria-label="Choose your workspace">
+                            <a class="auth-profile-option{% if selected_profile_type == 'fresher' %} is-selected{% endif %}" href="{{ url_for('auth.login', profile_type='fresher') }}">
+                                <span class="auth-profile-option-icon" aria-hidden="true">01</span>
+                                <span><strong>Fresher</strong><small>Start your first career journey</small></span>
+                            </a>
+                            <a class="auth-profile-option{% if selected_profile_type == 'experienced' %} is-selected{% endif %}" href="{{ url_for('auth.login', profile_type='experienced') }}">
+                                <span class="auth-profile-option-icon" aria-hidden="true">02</span>
+                                <span><strong>Working professional</strong><small>Switch roles or grow your career</small></span>
+                            </a>
+                        </div>
 
                         {% with messages = get_flashed_messages(with_categories=true) %}
                             {% for category, message in messages %}
@@ -47,6 +59,7 @@ Login | CareerPilot AI
                         {% endif %}
 
                         <form method="POST" data-login-form>
+                            <input type="hidden" name="profile_type" value="{{ selected_profile_type }}">
                             <div class="auth-login-field">
                                 <label for="email">Email address</label>
                                 <input id="email" type="email" name="email" class="form-control" value="{{ email|default('') }}" autocomplete="email" inputmode="email" required autofocus placeholder="you@example.com">
@@ -69,10 +82,14 @@ Login | CareerPilot AI
                         </form>
 
                         <div class="auth-login-divider"><span>New to CareerPilot?</span></div>
-                        <a class="btn btn-outline-primary auth-register-link" href="{{ url_for('auth.register') }}">Create your student account</a>
+                        <a class="btn btn-outline-primary auth-register-link" href="{{ url_for('auth.register', profile_type=selected_profile_type) }}">Create your account</a>
                         <p class="auth-login-help">Having trouble? Double-check your registered email address and password, then try again.</p>
                     </div>
                 </div>
+            </div>
+            <div class="auth-admin-entry">
+                <span>Are you an admin?</span>
+                <a href="{{ url_for('admin.admin_login') }}">Admin Login <span aria-hidden="true">→</span></a>
             </div>
         </div>
     </div>

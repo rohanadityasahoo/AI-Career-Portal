@@ -1,0 +1,153 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Professional Dashboard | CareerPilot AI{% endblock %}
+
+{% block content %}
+<section class="experienced-dashboard-page py-4 py-lg-5">
+    <div class="container">
+        <div class="experienced-dashboard-hero mb-4">
+            <div>
+                <span class="dashboard-eyebrow">Working professional workspace</span>
+                <h1>Build your next move, {{ student_name }}.</h1>
+                <p>Turn your current experience into a stronger story for the role or field you want next.</p>
+            </div>
+            <span class="experienced-dashboard-mark" aria-hidden="true">02</span>
+        </div>
+
+        <section class="row g-3 mt-1 mb-4" aria-label="Job search preparation tools">
+            <div class="col-6 col-xl">
+                <article class="dashboard-stat-card dashboard-stat-primary h-100">
+                    <strong class="dashboard-stat-value dashboard-stat-profile">Profile</strong>
+                    <span class="dashboard-stat-caption">{{ 'Ready for targeting' if progress.profile.complete else 'Add your career details' }}</span>
+                    <a href="{{ url_for('profile.student_profile') }}">Edit / View profile <span aria-hidden="true">→</span></a>
+                </article>
+            </div>
+            <div class="col-6 col-xl">
+                <article class="dashboard-stat-card h-100">
+                    <span class="dashboard-stat-label">Resume review</span>
+                    <strong class="dashboard-stat-value">{{ progress.resume.count }}</strong>
+                    {% if progress.resume.latest_score is not none %}
+                    <span class="dashboard-stat-caption">Latest signal: {{ progress.resume.latest_score }}/100</span>
+                    {% else %}
+                    <span class="dashboard-stat-caption">No review yet</span>
+                    {% endif %}
+                    <a href="{{ url_for('resume.resume_home') }}">Review resume <span aria-hidden="true">→</span></a>
+                </article>
+            </div>
+            <div class="col-6 col-xl">
+                <article class="dashboard-stat-card h-100">
+                    <span class="dashboard-stat-label">Interview practice</span>
+                    <strong class="dashboard-stat-value">{{ progress.interview.count }}</strong>
+                    {% if progress.interview.average_score is not none %}
+                    <span class="dashboard-stat-caption">Average: {{ progress.interview.average_score }}/100</span>
+                    {% else %}
+                    <span class="dashboard-stat-caption">No sessions yet</span>
+                    {% endif %}
+                    <a href="{{ url_for('interview.interview_home') }}">Practice interview <span aria-hidden="true">→</span></a>
+                </article>
+            </div>
+            <div class="col-6 col-xl">
+                <article class="dashboard-stat-card dashboard-roadmap-card h-100">
+                    <strong class="dashboard-stat-value dashboard-stat-roadmap">Career Roadmap</strong>
+                    <span class="dashboard-stat-caption">{{ progress.roadmap.target_role or 'Build your next-step plan' }}</span>
+                    <a href="{{ url_for('roadmap.roadmap_page') }}">Open roadmap <span aria-hidden="true">→</span></a>
+                </article>
+            </div>
+            <div class="col-6 col-xl">
+                <article class="dashboard-stat-card dashboard-chatbot-card h-100">
+                    <span class="dashboard-stat-label">AI career coach</span>
+                    <strong class="dashboard-stat-value dashboard-stat-chatbot">Chatbot</strong>
+                    <span class="dashboard-stat-caption">Ask about switching jobs or roles</span>
+                    <a href="{{ url_for('chatbot.chatbot_home') }}">Ask CareerPilot <span aria-hidden="true">→</span></a>
+                </article>
+            </div>
+        </section>
+
+        <div class="row g-4">
+            <div class="col-lg-7">
+                <article class="card border-0 shadow-sm dashboard-panel h-100">
+                    <div class="card-body p-4 p-lg-5">
+                        <div class="dashboard-eyebrow">Career switch plan</div>
+                        <h2 class="h4 mb-2">Start with the gap between today and next.</h2>
+                        <p class="text-muted mb-4">Your professional dashboard will connect your current role, transferable skills, target role, and learning plan in one place.</p>
+                        <div class="experienced-step-list">
+                            <div><span>01</span><strong>Tell us where you are</strong><small>Add your current role and experience.</small></div>
+                            <div><span>02</span><strong>Choose where you want to go</strong><small>Set a target field or job role.</small></div>
+                            <div><span>03</span><strong>Close the skill gap</strong><small>Get focused practice and learning recommendations.</small></div>
+                        </div>
+                        <a class="btn btn-primary mt-4" href="{{ url_for('profile.student_profile') }}">Complete professional profile <span aria-hidden="true">→</span></a>
+                    </div>
+                </article>
+            </div>
+            <div class="col-lg-5">
+                <article class="card border-0 shadow-sm dashboard-panel h-100">
+                    <div class="card-body p-4 p-lg-5">
+                        <div class="dashboard-eyebrow">Your next tools</div>
+                        <h2 class="h5 mb-3">Prepare with intention</h2>
+                        <div class="dashboard-tool-grid">
+                            <a href="{{ url_for('profile.student_profile') }}"><span>01</span>Profile</a>
+                            <a href="{{ url_for('resume.resume_home') }}"><span>02</span>Resume</a>
+                            <a href="{{ url_for('interview.interview_home') }}"><span>03</span>Interview</a>
+                            <a href="{{ url_for('roadmap.roadmap_page') }}"><span>04</span>Roadmap</a>
+                            <a href="{{ url_for('chatbot.chatbot_home') }}"><span>05</span>Career AI</a>
+                        </div>
+                    </div>
+                </article>
+            </div>
+        </div>
+
+        {% set professional_profile = progress.profile %}
+        <div class="row g-4 mt-1">
+            <div class="col-lg-8">
+                <article class="card border-0 shadow-sm dashboard-panel h-100 professional-focus-card">
+                    <div class="card-body p-4 p-lg-5">
+                        <div class="dashboard-eyebrow">Job search profile</div>
+                        <h2 class="h4 mb-2">Make your next move specific.</h2>
+                        <p class="text-muted mb-4">These details help CareerPilot tailor your resume, roadmap, and interview practice to the opportunities you want.</p>
+                        <div class="professional-focus-grid">
+                            <div>
+                                <span>Search status</span>
+                                <strong>{{ professional_profile.job_search_status or 'Not set' }}</strong>
+                            </div>
+                            <div>
+                                <span>Target role</span>
+                                <strong>{{ professional_profile.target_role or 'Not set' }}</strong>
+                            </div>
+                            <div>
+                                <span>Work preference</span>
+                                <strong>{{ professional_profile.work_preference or 'Not set' }}</strong>
+                            </div>
+                            <div>
+                                <span>Relocation</span>
+                                <strong>{{ professional_profile.relocation_preference or 'Not set' }}</strong>
+                            </div>
+                        </div>
+                        <div class="professional-target-companies mt-4">
+                            <span>Target companies</span>
+                            <strong>{{ professional_profile.target_companies or 'Add companies you would like to explore.' }}</strong>
+                        </div>
+                        <a class="btn btn-outline-primary mt-4" href="{{ url_for('profile.student_profile') }}">Update job-search preferences <span aria-hidden="true">→</span></a>
+                    </div>
+                </article>
+            </div>
+            <div class="col-lg-4">
+                <article class="card border-0 shadow-sm dashboard-panel h-100 professional-highlights-card">
+                    <div class="card-body p-4 p-lg-5">
+                        <div class="dashboard-eyebrow">Career highlights</div>
+                        <h2 class="h5 mb-3">Your strongest evidence</h2>
+                        <p class="professional-highlights-copy">{{ professional_profile.career_highlights or 'Add achievements and measurable outcomes to strengthen your next application.' }}</p>
+                        <div class="professional-link-list">
+                            {% if professional_profile.linkedin_url %}
+                            <a href="{{ professional_profile.linkedin_url }}" target="_blank" rel="noopener">Open LinkedIn <span aria-hidden="true">↗</span></a>
+                            {% endif %}
+                            {% if professional_profile.portfolio_url %}
+                            <a href="{{ professional_profile.portfolio_url }}" target="_blank" rel="noopener">Open portfolio <span aria-hidden="true">↗</span></a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </article>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

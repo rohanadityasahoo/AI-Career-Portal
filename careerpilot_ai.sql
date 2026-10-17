@@ -126,6 +126,7 @@ CREATE TABLE `students` (
   `email` varchar(100) NOT NULL,
   `phone` varchar(15) NOT NULL,
   `password` varchar(255) NOT NULL,
+  `profile_type` varchar(20) NOT NULL DEFAULT 'fresher',
   `gender` enum('Male','Female','Other') DEFAULT NULL,
   `college` varchar(150) DEFAULT NULL,
   `branch` varchar(100) DEFAULT NULL,
@@ -144,9 +145,59 @@ CREATE TABLE `students` (
 
 LOCK TABLES `students` WRITE;
 /*!40000 ALTER TABLE `students` DISABLE KEYS */;
-INSERT INTO `students` VALUES (1,'Rohan','rohan@gmail.com','1234567890','scrypt:32768:8:1$306sdRdDJ7dyZcbO$404c4e6b3126e9816702ad91b47d012701a1fe180569dd5449e70f3a837389cd257cd96027f716df7d67f2c06d97b400d36243bf1e298097159d2ca194990f74','Male','KIIT University','cse',4,'2026-08-11 11:07:51','student_1.jpeg');
+INSERT INTO `students` VALUES (1,'Rohan','rohan@gmail.com','1234567890','scrypt:32768:8:1$306sdRdDJ7dyZcbO$404c4e6b3126e9816702ad91b47d012701a1fe180569dd5449e70f3a837389cd257cd96027f716df7d67f2c06d97b400d36243bf1e298097159d2ca194990f74','fresher','Male','KIIT University','cse',4,'2026-08-11 11:07:51','student_1.jpeg');
 /*!40000 ALTER TABLE `students` ENABLE KEYS */;
 UNLOCK TABLES;
+
+--
+-- Table structure for table `admins`
+--
+
+DROP TABLE IF EXISTS `admins`;
+CREATE TABLE `admins` (
+  `admin_id` int NOT NULL AUTO_INCREMENT,
+  `full_name` varchar(100) NOT NULL,
+  `email` varchar(100) NOT NULL,
+  `password` varchar(255) NOT NULL,
+  `is_active` tinyint(1) NOT NULL DEFAULT '1',
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`admin_id`),
+  UNIQUE KEY `uq_admins_email` (`email`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+--
+-- Table structure for table `professional_profile`
+--
+
+DROP TABLE IF EXISTS `professional_profile`;
+CREATE TABLE `professional_profile` (
+  `profile_id` int NOT NULL AUTO_INCREMENT,
+  `student_id` int NOT NULL,
+  `current_job_title` varchar(150) DEFAULT NULL,
+  `current_company` varchar(150) DEFAULT NULL,
+  `years_experience` decimal(4,1) DEFAULT NULL,
+  `current_industry` varchar(150) DEFAULT NULL,
+  `key_skills` text,
+  `target_field` varchar(150) DEFAULT NULL,
+  `target_role` varchar(150) DEFAULT NULL,
+  `career_switch_reason` varchar(500) DEFAULT NULL,
+  `notice_period` varchar(60) DEFAULT NULL,
+  `expected_salary` varchar(100) DEFAULT NULL,
+  `preferred_location` varchar(150) DEFAULT NULL,
+  `job_search_status` varchar(40) DEFAULT NULL,
+  `target_companies` varchar(300) DEFAULT NULL,
+  `employment_type` varchar(30) DEFAULT NULL,
+  `work_preference` varchar(30) DEFAULT NULL,
+  `relocation_preference` varchar(40) DEFAULT NULL,
+  `linkedin_url` varchar(255) DEFAULT NULL,
+  `portfolio_url` varchar(255) DEFAULT NULL,
+  `career_highlights` text,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`profile_id`),
+  UNIQUE KEY `uq_professional_profile_student_id` (`student_id`),
+  CONSTRAINT `fk_professional_profile_student` FOREIGN KEY (`student_id`) REFERENCES `students` (`student_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;

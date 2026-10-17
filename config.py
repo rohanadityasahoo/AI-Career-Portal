@@ -35,3 +35,7 @@ MYSQL_DB = os.getenv(
     "MYSQLDATABASE",
     os.getenv("MYSQL_DB", "careerpilot_ai")
 )
+
+ADMIN_EMAIL = os.getenv("ADMIN_EMAIL", "").strip().lower()
+ADMIN_PASSWORD_HASH = os.getenv("ADMIN_PASSWORD_HASH", "")
+ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "")

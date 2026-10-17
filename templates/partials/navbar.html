@@ -40,15 +40,19 @@
             </ul>
 
             <div class="ms-lg-3">
-
-                <a href="/login" class="btn btn-outline-primary me-2">
-                    Login
-                </a>
-
-                <a href="/register" class="btn btn-primary">
-                    Register
-                </a>
-
+                {% if request.path == '/' %}
+                <a href="{{ url_for('auth.login') }}" class="btn btn-outline-primary me-2">Login</a>
+                <a href="{{ url_for('auth.register') }}" class="btn btn-primary">Register</a>
+                {% elif session.get('admin_id') %}
+                <a href="{{ url_for('admin.admin_dashboard') }}" class="btn btn-outline-primary me-2">Admin dashboard</a>
+                <a href="{{ url_for('admin.admin_logout') }}" class="btn btn-primary">Logout</a>
+                {% elif session.get('student_id') %}
+                <a href="{{ url_for('dashboard.dashboard_home') }}" class="btn btn-outline-primary me-2">Dashboard</a>
+                <a href="{{ url_for('auth.logout') }}" class="btn btn-primary">Logout</a>
+                {% else %}
+                <a href="{{ url_for('auth.login') }}" class="btn btn-outline-primary me-2">Login</a>
+                <a href="{{ url_for('auth.register') }}" class="btn btn-primary">Register</a>
+                {% endif %}
             </div>
 
         </div>
