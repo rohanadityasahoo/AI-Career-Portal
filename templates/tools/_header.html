@@ -1,0 +1,17 @@
+<header class="career-tools-hero">
+    <div>
+        <div class="career-tools-eyebrow">Career switch toolkit</div>
+        <h1>Move from interest to action.</h1>
+        <p>Use focused tools to find better-fit roles, tailor applications, and keep every opportunity moving.</p>
+    </div>
+    <div class="career-tools-mark" aria-hidden="true">05</div>
+</header>
+
+<nav class="career-tools-nav" aria-label="Career tools">
+    <a class="{% if active_tool == 'home' %}is-active{% endif %}" href="{{ url_for('career_tools.tools_home') }}">All tools</a>
+    <a class="{% if active_tool == 'job-matcher' %}is-active{% endif %}" href="{{ url_for('career_tools.job_matcher') }}">Job matcher</a>
+    <a class="{% if active_tool == 'application-tracker' %}is-active{% endif %}" href="{{ url_for('career_tools.application_tracker') }}">Applications</a>
+    <a class="{% if active_tool == 'resume-tailor' %}is-active{% endif %}" href="{{ url_for('career_tools.resume_tailor') }}">Resume tailor</a>
+    <a class="{% if active_tool == 'cover-letter' %}is-active{% endif %}" href="{{ url_for('career_tools.cover_letter') }}">Cover letter</a>
+    <a class="{% if active_tool == 'skill-gap' %}is-active{% endif %}" href="{{ url_for('career_tools.skill_gap') }}">Skill gaps</a>
+</nav>

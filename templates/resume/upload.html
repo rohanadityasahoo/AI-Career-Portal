@@ -1,16 +1,16 @@
 {% extends "layouts/base.html" %}
 
-{% block title %}AI Resume Analyzer | CareerPilot AI{% endblock %}
+{% block title %}{{ 'Working Professional' if profile_type == 'experienced' else 'Fresher' }} {{ 'Resume Tailor' if tool_mode|default(false) else 'Resume Analyzer' }} | CareerPilot AI{% endblock %}
 
 {% block content %}
 <div class="resume-upload-page">
     <div class="container py-5">
         <div class="resume-upload-hero">
-            <div class="resume-eyebrow">CareerPilot AI</div>
+            <div class="resume-eyebrow">{{ 'Working professional' if profile_type == 'experienced' else 'Fresher' }} resume track</div>
             <div class="row align-items-end g-3">
                 <div class="col-lg-8">
-                    <h1>Turn your resume into a clearer next step.</h1>
-                    <p class="mb-0">Get an evidence-based readiness snapshot, detailed editing advice, and—if you add a role or job description—a more focused review.</p>
+                    <h1>{% if profile_type == 'experienced' %}{{ 'Show the impact behind your experience.' if not tool_mode|default(false) else 'Tailor your professional resume for the next role.' }}{% else %}{{ 'Turn your potential into clear evidence.' if not tool_mode|default(false) else 'Tailor your fresher resume for the role you want.' }}{% endif %}</h1>
+                    <p class="mb-0">{% if profile_type == 'experienced' %}{{ 'Show measurable outcomes, ownership, career progression, and the evidence behind your next move.' if not tool_mode|default(false) else 'Compare your professional experience with a target role and find the impact evidence to strengthen before applying.' }}{% else %}{{ 'Get an evidence-based review of your education, projects, skills, and entry-level readiness.' if not tool_mode|default(false) else 'Compare your projects, skills, and learning evidence with the role you want next.' }}{% endif %}</p>
                 </div>
                 <div class="col-lg-4">
                     <div class="resume-privacy-note">
@@ -28,8 +28,8 @@
                         <div class="d-flex align-items-start gap-3 mb-4">
                             <div class="resume-step-number">1</div>
                             <div>
-                                <h2 class="h4 mb-1">Upload and tailor your review</h2>
-                                <p class="text-muted mb-0">A target role and job description are optional, but they make the recommendations more relevant.</p>
+                                <h2 class="h4 mb-1">{% if profile_type == 'experienced' %}{{ 'Upload your professional resume' if not tool_mode|default(false) else 'Upload and tailor your next-move resume' }}{% else %}{{ 'Upload your fresher resume' if not tool_mode|default(false) else 'Upload and tailor your first-job resume' }}{% endif %}</h2>
+                                <p class="text-muted mb-0">{% if profile_type == 'experienced' %}Focus the review on ownership, measurable outcomes, and the role or field you want to move into.{% else %}Focus the review on projects, education, skills, and practical evidence for your first opportunity.{% endif %}</p>
                             </div>
                         </div>
 
@@ -38,6 +38,7 @@
                         {% endif %}
 
                         <form method="POST" enctype="multipart/form-data" data-resume-form>
+                            {% if tool_mode|default(false) %}<input type="hidden" name="mode" value="tailor">{% endif %}
                             <div class="mb-4">
                                 <label for="resume" class="form-label fw-semibold">Resume PDF <span class="text-danger">*</span></label>
                                 <label class="resume-dropzone" for="resume">
@@ -51,8 +52,8 @@
                             <div class="row g-3">
                                 <div class="col-md-5">
                                     <label for="target_role" class="form-label fw-semibold">Target role <span class="text-muted fw-normal">(optional)</span></label>
-                                    <input type="text" class="form-control" id="target_role" name="target_role" maxlength="120" placeholder="e.g. Data Analyst" value="{{ target_role|default('', true) }}">
-                                    <div class="form-text">Used to focus the coaching.</div>
+                                    <input type="text" class="form-control" id="target_role" name="target_role" maxlength="120" placeholder="{{ 'e.g. Senior Data Analyst or Product Manager' if profile_type == 'experienced' else 'e.g. Data Analyst or Software Developer' }}" value="{{ target_role|default('', true) }}">
+                                    <div class="form-text">{% if profile_type == 'experienced' %}Used to focus impact and career-switch coaching.{% else %}Used to focus entry-level coaching and evidence.{% endif %}</div>
                                 </div>
                                 <div class="col-md-7">
                                     <label for="job_description" class="form-label fw-semibold">Job description <span class="text-muted fw-normal">(optional)</span></label>
@@ -64,7 +65,7 @@
                             <div class="resume-form-footer mt-4">
                                 <p class="small text-muted mb-0">Your diagnostic scores are based on extracted text and common resume signals. AI suggestions are editorial guidance—always keep your resume truthful.</p>
                                 <button type="submit" class="btn btn-primary resume-submit" data-resume-submit>
-                                    <span>Analyze my resume</span>
+                                    <span>{{ 'Tailor my resume' if tool_mode|default(false) else 'Analyze my resume' }}</span>
                                     <span aria-hidden="true">→</span>
                                 </button>
                             </div>

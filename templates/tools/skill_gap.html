@@ -1,0 +1,20 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Skill Gap Analyzer | CareerPilot AI{% endblock %}
+
+{% block content %}
+<section class="career-tools-page">
+    <div class="container py-5">
+        {% include "tools/_header.html" %}
+        <div class="row g-4 mt-1 align-items-start">
+            <div class="col-lg-5"><section class="career-tool-panel">
+                <div class="career-tools-eyebrow">05 / Skill gap analyzer</div><h2>Turn a job requirement into a learning plan.</h2><p class="text-muted">Use a target role or paste a real job description. The analyzer separates what is already visible from the skills that need evidence next.</p>
+                <form method="POST" class="career-tool-form"><label for="target_role">Target role</label><input class="form-control" id="target_role" name="target_role" maxlength="120" value="{{ form.target_role }}" placeholder="e.g. Business Analyst"><label for="skills">Current skills</label><textarea class="form-control" id="skills" name="skills" rows="5" maxlength="1200" placeholder="SQL, Excel, Power BI">{{ form.skills }}</textarea><label for="job_description">Job description <span class="text-muted fw-normal">(optional)</span></label><textarea class="form-control" id="job_description" name="job_description" rows="7" maxlength="8000" placeholder="Paste responsibilities and requirements for a more precise gap report.">{{ form.job_description }}</textarea><button class="btn btn-primary" type="submit">Build my gap plan <span aria-hidden="true">-></span></button></form>
+            </section></div>
+            <div class="col-lg-7"><section class="career-tool-panel"><div class="d-flex justify-content-between align-items-start gap-3"><div><div class="career-tools-eyebrow">{{ gap.field }}</div><h2>{{ gap.role }} readiness</h2></div><strong class="career-match-score">{{ gap.readiness }}%</strong></div><div class="career-progress mt-3" aria-label="Readiness {{ gap.readiness }} percent"><span style="width: {{ gap.readiness }}%"></span></div><p class="text-muted mt-3">{{ gap.summary }}</p><div class="career-score-grid"><div><span>Recognised requirements</span><strong>{{ gap.required_skills|length }}</strong></div><div><span>Already visible</span><strong>{{ gap.matched_skills|length }}</strong></div><div><span>Priority gaps</span><strong>{{ gap.missing_skills|length }}</strong></div></div><div class="career-skill-columns"><div><h3>Already visible</h3><div class="career-chip-row">{% for skill in gap.matched_skills %}<span class="is-match">{{ skill }}</span>{% else %}<small class="text-muted">Add your current skills to compare them.</small>{% endfor %}</div></div><div><h3>Build next</h3><div class="career-chip-row">{% for skill in gap.missing_skills %}<span>{{ skill }}</span>{% else %}<small class="text-success">No listed gaps for this role.</small>{% endfor %}</div></div></div></section>
+                {% if gap.action_plan %}<section class="career-tool-panel mt-4"><div class="career-tools-eyebrow">Action plan</div><h2>Build evidence, not just a skill list.</h2><div class="career-action-plan">{% for item in gap.action_plan %}<article><span>{{ '%02d'|format(loop.index) }}</span><div><h3>{{ item.skill }}</h3><p>{{ item.why }}</p><small>{{ item.action }}</small></div></article>{% endfor %}</div></section>{% endif %}<div class="career-next-step mt-4"><strong>Recommended next move</strong><p>{{ gap.next_step }}</p></div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

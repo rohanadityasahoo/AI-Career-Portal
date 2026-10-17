@@ -1,0 +1,13 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Career Tools | CareerPilot AI{% endblock %}
+
+{% block content %}
+<section class="career-tools-page">
+    <div class="container py-5">
+        {% include "tools/_header.html" %}
+        <div class="career-tools-intro mt-4"><strong>Built for a real job search.</strong><span>Match real job descriptions, create application-ready evidence, and keep every follow-up accountable.</span></div>
+        <div class="row g-4 mt-1"><div class="col-md-6 col-xl-4"><a class="career-tool-card" href="{{ url_for('career_tools.job_matcher') }}"><span class="career-tool-number">01</span><h2>Job Matcher</h2><p>Paste a job post and get a transparent fit score with matched and missing requirements.</p><strong>Analyze a job -></strong></a></div><div class="col-md-6 col-xl-4"><a class="career-tool-card" href="{{ url_for('career_tools.application_tracker') }}"><span class="career-tool-number">02</span><h2>Application Tracker</h2><p>Store the job context, priority, next action, follow-up date, status, and interview notes.</p><strong>Manage pipeline -></strong></a></div><div class="col-md-6 col-xl-4"><a class="career-tool-card" href="{{ url_for('career_tools.resume_tailor') }}"><span class="career-tool-number">03</span><h2>Resume Tailor</h2><p>Compare your resume with a target description and find missing evidence before applying.</p><strong>Tailor a resume -></strong></a></div><div class="col-md-6 col-xl-4"><a class="career-tool-card" href="{{ url_for('career_tools.cover_letter') }}"><span class="career-tool-number">04</span><h2>Cover Letter</h2><p>Generate a truthful, role-specific draft, verify its requirement coverage, then download it.</p><strong>Create a draft -></strong></a></div><div class="col-md-6 col-xl-4"><a class="career-tool-card" href="{{ url_for('career_tools.skill_gap') }}"><span class="career-tool-number">05</span><h2>Skill Gap Analyzer</h2><p>Turn a real job requirement into prioritized learning and portfolio evidence actions.</p><strong>Build a gap plan -></strong></a></div></div>
+    </div>
+</section>
+{% endblock %}

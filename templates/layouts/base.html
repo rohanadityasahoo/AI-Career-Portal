@@ -41,6 +41,8 @@
         {% set section_back_url = url_for("dashboard.dashboard_home") %}
     {% elif request.path.startswith("/chatbot") %}
         {% set section_back_url = url_for("dashboard.dashboard_home") %}
+    {% elif request.path.startswith("/tools") %}
+        {% set section_back_url = url_for("dashboard.dashboard_home") %}
     {% endif %}
 
     {% if section_back_url %}
@@ -72,6 +74,8 @@
     <script
         src="{{ url_for('static', filename='js/script.js') }}">
     </script>
+
+    {% block scripts %}{% endblock %}
 
 </body>
 

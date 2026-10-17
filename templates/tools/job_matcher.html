@@ -1,0 +1,36 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Job Matcher | CareerPilot AI{% endblock %}
+
+{% block content %}
+<section class="career-tools-page">
+    <div class="container py-5">
+        {% include "tools/_header.html" %}
+        <div class="row g-4 mt-1 align-items-start">
+            <div class="col-lg-5"><section class="career-tool-panel">
+                <div class="career-tools-eyebrow">01 / Job matcher</div>
+                <h2>Match yourself to a real opportunity.</h2>
+                <p class="text-muted">Paste a job description to see an explainable fit score, matched skills, and the evidence you still need. You can also explore role directions without a job post.</p>
+                <form method="POST" class="career-tool-form">
+                    <label for="target_role">Target role</label><input class="form-control" id="target_role" name="target_role" maxlength="120" value="{{ form.target_role }}" placeholder="e.g. Data Analyst">
+                    <label for="skills">Your skills</label><textarea class="form-control" id="skills" name="skills" rows="4" maxlength="1200" placeholder="SQL, Python, Excel, stakeholder management">{{ form.skills }}</textarea>
+                    <label for="job_description">Job description <span class="text-muted fw-normal">(recommended)</span></label><textarea class="form-control" id="job_description" name="job_description" rows="7" maxlength="8000" placeholder="Paste the responsibilities and requirements from the job post.">{{ form.job_description }}</textarea>
+                    <div class="row g-3"><div class="col-sm-6"><label for="location">Preferred location</label><input class="form-control" id="location" name="location" maxlength="150" value="{{ form.location }}" placeholder="Bengaluru or remote"></div><div class="col-sm-6"><label for="work_preference">Work preference</label><select class="form-select" id="work_preference" name="work_preference"><option value="">Any preference</option>{% for option in ('Remote', 'Hybrid', 'On-site', 'Flexible') %}<option value="{{ option }}" {% if form.work_preference == option %}selected{% endif %}>{{ option }}</option>{% endfor %}</select></div></div>
+                    <button class="btn btn-primary" type="submit">Calculate my fit <span aria-hidden="true">-></span></button>
+                </form>
+            </section></div>
+            <div class="col-lg-7">
+                {% if custom_fit %}<section class="career-tool-panel career-fit-report mb-4">
+                    <div class="d-flex justify-content-between gap-3 align-items-start"><div><div class="career-tools-eyebrow">Job description fit</div><h2>{{ custom_fit.role }}</h2><p class="text-muted mb-0">{{ custom_fit.summary }}</p></div><strong class="career-match-score">{{ custom_fit.match_score }}%</strong></div>
+                    <div class="career-score-grid"><div><span>Skill coverage</span><strong>{{ custom_fit.skill_score }}%</strong></div><div><span>Role signal</span><strong>{{ custom_fit.title_score }}%</strong></div>{% if custom_fit.preference_score is not none %}<div><span>Preference signal</span><strong>{{ custom_fit.preference_score }}%</strong></div>{% endif %}<div><span>Requirements found</span><strong>{{ custom_fit.required_skills|length }}</strong></div></div>
+                    <div class="career-skill-columns"><div><h3>Matched evidence</h3><div class="career-chip-row">{% for skill in custom_fit.matched_skills %}<span class="is-match">{{ skill }}</span>{% else %}<small class="text-muted">No recognised skills matched yet.</small>{% endfor %}</div></div><div><h3>Needs evidence</h3><div class="career-chip-row">{% for skill in custom_fit.missing_skills %}<span>{{ skill }}</span>{% else %}<small class="text-success">All recognised skills are visible.</small>{% endfor %}</div></div></div>
+                    <div class="career-next-step mt-4"><strong>What to do next</strong><p>{{ custom_fit.next_step }}</p></div>
+                </section>{% endif %}
+                <section class="career-tool-panel"><div class="career-tools-eyebrow">Role directions</div><h2>Best-fit directions</h2><p class="text-muted">These comparisons use the same skills and target role, so you can see adjacent options as well as your exact target.</p>
+                    {% if matches %}<div class="career-match-list">{% for match in matches %}<article class="career-match-card"><div class="d-flex justify-content-between gap-3 align-items-start"><div><h3>{{ match.role }}</h3><p>{{ match.summary }}</p></div><strong class="career-match-score">{{ match.match_score }}%</strong></div><div class="career-score-line"><span>Skill coverage</span><strong>{{ match.skill_score }}%</strong><span>Role signal</span><strong>{{ match.role_score }}%</strong></div><div class="career-chip-row">{% for skill in match.matched_skills %}<span class="is-match">{{ skill }}</span>{% endfor %}{% for skill in match.missing_skills %}<span>{{ skill }}</span>{% endfor %}</div><small>{{ match.next_step }}</small></article>{% endfor %}</div>{% else %}<div class="career-empty-state">Add your target role or a few skills to see role matches.</div>{% endif %}
+                </section>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

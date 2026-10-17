@@ -3,14 +3,211 @@
 {% block title %}Resume Review | CareerPilot AI{% endblock %}
 
 {% block content %}
-<div class="resume-results-page">
+<div class="resume-results-page{% if profile_type == 'experienced' or (ai_feedback and ai_feedback.profile_type == 'experienced') %} resume-results-professional{% endif %}">
     <div class="container py-5">
         {% if ai_feedback %}
-        <header class="resume-results-header">
+        {% if profile_type == 'experienced' or ai_feedback.profile_type == 'experienced' %}
+        <div class="resume-professional-results">
+            <header class="professional-resume-hero">
+                <div class="professional-resume-hero-copy">
+                    <span class="professional-resume-eyebrow">Working professional resume lab</span>
+                    <h1>Turn your experience into a stronger next move.</h1>
+                    <p>Review the proof behind your ownership, outcomes, progression, and readiness for the role you want next.</p>
+                </div>
+                <div class="professional-resume-score" aria-label="Professional impact score {{ ai_feedback.overall_score }} out of 100">
+                    <span>Impact score</span>
+                    <div class="professional-resume-score-ring" style="--score: {{ ai_feedback.overall_score }}%;">
+                        <strong>{{ ai_feedback.overall_score }}</strong><small>/100</small>
+                    </div>
+                    <em>Diagnostic, not a hiring prediction</em>
+                </div>
+            </header>
+
+            {% if not history_saved %}
+            <div class="alert alert-warning professional-resume-alert">Your review is ready, but we could not save it to your history right now.</div>
+            {% endif %}
+
+            <div class="professional-resume-toolbar">
+                <div class="professional-resume-toolbar-meta">
+                    {% if ai_feedback.ai_assisted %}
+                    <span class="professional-resume-status">AI editorial review included</span>
+                    {% else %}
+                    <span class="professional-resume-status is-local">Evidence-based review</span>
+                    {% endif %}
+                    <span>{{ ai_feedback.review_basis }}</span>
+                </div>
+                <a href="{{ url_for('resume.resume_home') }}" class="btn professional-resume-button">Analyze another resume</a>
+            </div>
+
+            <section class="professional-resume-kpi-grid" aria-label="Professional resume signals">
+                <article class="professional-resume-kpi">
+                    <span class="professional-resume-kpi-icon">01</span>
+                    <div><strong>{{ ai_feedback.facts.action_bullet_count }}</strong><span>Action-led bullets</span></div>
+                    <small>Show ownership through strong verbs.</small>
+                </article>
+                <article class="professional-resume-kpi">
+                    <span class="professional-resume-kpi-icon">02</span>
+                    <div><strong>{{ ai_feedback.facts.metric_bullet_count }}</strong><span>Quantified outcomes</span></div>
+                    <small>Make results credible and easy to scan.</small>
+                </article>
+                <article class="professional-resume-kpi">
+                    <span class="professional-resume-kpi-icon">03</span>
+                    <div><strong>{{ ai_feedback.facts.word_count }}</strong><span>Words reviewed</span></div>
+                    <small>Keep the career story focused.</small>
+                </article>
+                <article class="professional-resume-kpi">
+                    <span class="professional-resume-kpi-icon">04</span>
+                    <div><strong>{{ ai_feedback.detected_skills|length }}</strong><span>Skills detected</span></div>
+                    <small>Connect capabilities to target roles.</small>
+                </article>
+            </section>
+
+            <section class="professional-resume-story-grid">
+                <article class="professional-resume-story-card">
+                    <div class="professional-resume-section-label">Career story</div>
+                    <h2>Does your resume show why you are ready for more?</h2>
+                    <p>{{ ai_feedback.summary }}</p>
+                    <div class="professional-resume-story-footer">
+                        <span>Current signal</span>
+                        <strong>{{ ai_feedback.facts.bullet_count }} resume bullets reviewed</strong>
+                    </div>
+                </article>
+                <article class="professional-resume-signal-card">
+                    <div class="professional-resume-section-label">Role-readiness pulse</div>
+                    <h2>Where your impact is visible</h2>
+                    <div class="professional-resume-score-list">
+                        {% for label, score in ai_feedback.scores.items() %}
+                        <div class="professional-resume-score-row">
+                            <div><span>{{ label }}</span><strong>{{ score }}/100</strong></div>
+                            <div class="professional-resume-score-track"><span style="width: {{ score }}%"></span></div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </article>
+            </section>
+
+            <section class="professional-resume-section-heading">
+                <div>
+                    <div class="professional-resume-section-label">Career transition plan</div>
+                    <h2>Strengthen the evidence behind your next role.</h2>
+                </div>
+                <span>Prioritized from your resume text</span>
+            </section>
+            <section class="professional-resume-action-list">
+                {% for item in ai_feedback.priority_actions %}
+                <article class="professional-resume-action-card">
+                    <div class="professional-resume-action-index">{{ '%02d'|format(loop.index) }}</div>
+                    <div class="professional-resume-action-copy">
+                        <div class="professional-resume-action-heading">
+                            <h3>{{ item.title }}</h3>
+                            <span class="resume-priority resume-priority-{{ item.priority }}">{{ item.priority }}</span>
+                        </div>
+                        <p>{{ item.diagnosis }}</p>
+                        <div class="professional-resume-next-move"><strong>Next move</strong>{{ item.action }}</div>
+                        {% if item.example %}<div class="professional-resume-example"><strong>Safe example</strong>{{ item.example }}</div>{% endif %}
+                    </div>
+                </article>
+                {% else %}
+                <p class="text-muted mb-0">No priority actions were returned. Review your resume for clear ownership, outcomes, progression, and target-role evidence.</p>
+                {% endfor %}
+            </section>
+
+            <section class="professional-resume-insight-grid">
+                <article class="professional-resume-insight-card professional-resume-impact-card">
+                    <div class="professional-resume-section-label">Impact and ownership signals</div>
+                    <h2>Keep these strengths in your story.</h2>
+                    <ul class="professional-resume-strength-list">
+                        {% for strength in ai_feedback.strengths %}
+                        <li><span aria-hidden="true">+</span>{{ strength }}</li>
+                        {% else %}
+                        <li><span aria-hidden="true">+</span>Use the scorecard above to identify the strongest evidence to keep.</li>
+                        {% endfor %}
+                    </ul>
+                    <div class="professional-resume-fact-strip">
+                        <span><strong>{{ ai_feedback.facts.bullet_count }}</strong> bullets</span>
+                        <span><strong>{{ ai_feedback.facts.action_bullet_count }}</strong> action-led</span>
+                        <span><strong>{{ ai_feedback.facts.metric_bullet_count }}</strong> quantified</span>
+                    </div>
+                </article>
+                <article class="professional-resume-insight-card">
+                    <div class="professional-resume-section-label">Career signal coverage</div>
+                    <h2>Make your professional structure obvious.</h2>
+                    <ul class="professional-resume-checklist">
+                        {% for name, found in ai_feedback.sections.items() %}
+                        <li class="{% if found %}is-found{% else %}is-missing{% endif %}"><span aria-hidden="true">{% if found %}+{% else %}-{% endif %}</span>{{ name }}</li>
+                        {% endfor %}
+                    </ul>
+                </article>
+            </section>
+
+            <section class="professional-resume-skill-card">
+                <div>
+                    <div class="professional-resume-section-label">Capability inventory</div>
+                    <h2>Skills your resume makes visible.</h2>
+                    <p>Use these skills as anchors for target-role keywords, interview stories, and proof of scope.</p>
+                </div>
+                {% if ai_feedback.detected_skills %}
+                <div class="professional-resume-skill-cloud">
+                    {% for skill in ai_feedback.detected_skills %}<span>{{ skill }}</span>{% endfor %}
+                </div>
+                {% else %}
+                <p class="professional-resume-empty-skill">No supported skills were detected. Add a clear skills section and connect each skill to an outcome.</p>
+                {% endif %}
+            </section>
+
+            {% if ai_feedback.job_alignment %}
+            <section class="professional-resume-alignment">
+                <div class="professional-resume-alignment-head">
+                    <div>
+                        <div class="professional-resume-section-label">Target-role fit</div>
+                        <h2>Move from current experience to target-role evidence.</h2>
+                        {% if ai_feedback.job_alignment.available %}
+                        <p>{{ ai_feedback.job_alignment.matched_skills|length }} of {{ ai_feedback.job_alignment.total_skills }} recognisable skills in the job description were also found in your resume text.</p>
+                        {% else %}
+                        <p>{{ ai_feedback.job_alignment.message }}</p>
+                        {% endif %}
+                    </div>
+                    {% if ai_feedback.job_alignment.available %}<div class="professional-resume-alignment-score">{{ ai_feedback.job_alignment.score }}<small>%</small></div>{% endif %}
+                </div>
+                {% if ai_feedback.job_alignment.available %}
+                <div class="professional-resume-alignment-columns">
+                    <div><h3>Already evidenced</h3><div class="professional-resume-skill-cloud is-positive">{% for skill in ai_feedback.job_alignment.matched_skills %}<span>{{ skill }}</span>{% else %}<small>No supported skills overlap yet.</small>{% endfor %}</div></div>
+                    <div><h3>Build proof for</h3><div class="professional-resume-skill-cloud">{% for skill in ai_feedback.job_alignment.missing_skills %}<span>{{ skill }}</span>{% else %}<small>No supported skill gaps were found.</small>{% endfor %}</div></div>
+                </div>
+                {% endif %}
+            </section>
+            {% endif %}
+
+            <section class="professional-resume-review-grid">
+                <article class="professional-resume-review-card">
+                    <div class="professional-resume-section-label">Editorial review</div>
+                    <h2>How to make the career story more persuasive.</h2>
+                    {% for item in ai_feedback.category_feedback %}
+                    <div class="professional-resume-feedback-item"><h3>{{ item.area }}</h3><p>{{ item.feedback }}</p></div>
+                    {% else %}
+                    <p class="text-muted mb-0">No additional category feedback was returned.</p>
+                    {% endfor %}
+                </article>
+                <article class="professional-resume-review-card professional-resume-role-card">
+                    <div class="professional-resume-section-label">Next-role directions</div>
+                    <h2>Roles to explore.</h2>
+                    {% for role in ai_feedback.suggested_roles %}
+                    <div class="professional-resume-role"><h3>{{ role.role }}</h3><p>{{ role.reason }}</p></div>
+                    {% else %}
+                    <p class="text-muted mb-0">Add a target role on your next review for more focused directions.</p>
+                    {% endfor %}
+                </article>
+            </section>
+
+            <footer class="professional-resume-method-note">
+                <strong>Use this review as a working plan:</strong> Strengthen impact, scope, ownership, progression, and target-role alignment. Confirm every claim, number, and skill before adding it to your resume.
+            </footer>
+        </div>
+        {% else %}        <header class="resume-results-header">
             <div>
                 <div class="resume-eyebrow">{{ ai_feedback.review_basis }}</div>
-                <h1>Resume review, grounded in your document.</h1>
-                <p class="mb-0">Scores are diagnostic signals from readable text. Use the detailed guidance to make accurate, supportable improvements.</p>
+                <h1>{% if profile_type == 'experienced' or ai_feedback.profile_type == 'experienced' %}Your professional impact review.{% else %}Your fresher readiness review.{% endif %}</h1>
+                <p class="mb-0">{% if profile_type == 'experienced' or ai_feedback.profile_type == 'experienced' %}This review focuses on measurable impact, ownership, progression, and evidence for your next career move.{% else %}This review focuses on education, projects, practical skills, and evidence for your first or early-career opportunity.{% endif %}</p>
             </div>
             <div class="d-flex flex-wrap gap-2">
                 {% if ai_feedback.ai_assisted %}
@@ -29,11 +226,11 @@
         <section class="row g-4 mt-1">
             <div class="col-lg-4">
                 <div class="resume-score-panel h-100">
-                    <span class="resume-score-label">Overall readiness signal</span>
+                    <span class="resume-score-label">{{ 'Overall professional impact' if profile_type == 'experienced' or ai_feedback.profile_type == 'experienced' else 'Overall entry-level readiness' }}</span>
                     <div class="resume-score-orb" aria-label="Overall readiness score {{ ai_feedback.overall_score }} out of 100">
                         <strong>{{ ai_feedback.overall_score }}</strong><span>/100</span>
                     </div>
-                    <p class="small mb-0">A weighted diagnostic based on section coverage, scannability, content evidence, and visible skills—not a prediction of an application outcome.</p>
+                    <p class="small mb-0">{% if profile_type == 'experienced' or ai_feedback.profile_type == 'experienced' %}Weighted diagnostic based on impact evidence, ownership signals, progression, scannability, and visible skills—not a hiring prediction.{% else %}Weighted diagnostic based on project evidence, education, scannability, practical content, and visible skills—not a hiring prediction.{% endif %}</p>
                 </div>
             </div>
             <div class="col-lg-8">
@@ -42,7 +239,7 @@
                         <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
                             <div>
                                 <div class="resume-section-kicker">Editorial summary</div>
-                                <h2 class="h4 mb-0">Where to focus first</h2>
+                                <h2 class="h4 mb-0">{{ 'Where your professional story needs proof' if profile_type == 'experienced' or ai_feedback.profile_type == 'experienced' else 'Where your potential needs proof' }}</h2>
                             </div>
                             <span class="resume-detail-count">{{ ai_feedback.facts.word_count }} words read</span>
                         </div>
@@ -56,7 +253,7 @@
             <div class="d-flex justify-content-between align-items-end gap-3 mb-3">
                 <div>
                     <div class="resume-section-kicker">Diagnostic snapshot</div>
-                    <h2 class="h4 mb-0">Make the basics easy to scan</h2>
+                    <h2 class="h4 mb-0">{{ 'Make your impact easy to scan' if profile_type == 'experienced' or ai_feedback.profile_type == 'experienced' else 'Make your evidence easy to scan' }}</h2>
                 </div>
                 <span class="small text-muted">These are text-based indicators, not an ATS simulation.</span>
             </div>
@@ -80,7 +277,7 @@
                 <div class="card border-0 shadow-sm h-100">
                     <div class="card-body p-4 p-lg-5">
                         <div class="resume-section-kicker">Action plan</div>
-                        <h2 class="h4 mb-4">Highest-impact improvements</h2>
+                        <h2 class="h4 mb-4">{{ 'Highest-impact career improvements' if profile_type == 'experienced' or ai_feedback.profile_type == 'experienced' else 'Highest-impact entry-level improvements' }}</h2>
                         <div class="resume-action-list">
                             {% for item in ai_feedback.priority_actions %}
                             <article class="resume-action-item">
@@ -105,7 +302,7 @@
                 <div class="card border-0 shadow-sm h-100">
                     <div class="card-body p-4">
                         <div class="resume-section-kicker">Detected sections</div>
-                        <h2 class="h5 mb-3">Document structure</h2>
+                        <h2 class="h5 mb-3">{{ 'Professional structure' if profile_type == 'experienced' or ai_feedback.profile_type == 'experienced' else 'Entry-level structure' }}</h2>
                         <ul class="resume-section-checklist">
                             {% for name, found in ai_feedback.sections.items() %}
                             <li class="{% if found %}found{% else %}missing{% endif %}">
@@ -127,8 +324,8 @@
             <div class="col-lg-7">
                 <div class="card border-0 shadow-sm h-100">
                     <div class="card-body p-4 p-lg-5">
-                        <div class="resume-section-kicker">What’s already working</div>
-                        <h2 class="h4 mb-3">Keep and strengthen these signals</h2>
+                        <div class="resume-section-kicker">{{ 'Professional strengths' if profile_type == 'experienced' or ai_feedback.profile_type == 'experienced' else 'Early-career strengths' }}</div>
+                        <h2 class="h4 mb-3">{{ 'Keep and strengthen these impact signals' if profile_type == 'experienced' or ai_feedback.profile_type == 'experienced' else 'Keep and strengthen these foundations' }}</h2>
                         <ul class="resume-strength-list mb-0">
                             {% for strength in ai_feedback.strengths %}
                             <li><span aria-hidden="true">✓</span><span>{{ strength }}</span></li>
@@ -227,8 +424,9 @@
         </section>
 
         <section class="resume-method-note mt-4">
-            <strong>How to use this review:</strong> Scores reflect only readable PDF text and common document signals. AI feedback is editorial guidance; confirm every claim, number, and skill before adding it to your resume.
+            <strong>How to use this review:</strong> {% if profile_type == 'experienced' or ai_feedback.profile_type == 'experienced' %}Use the actions to strengthen impact, scope, ownership, and progression. {% else %}Use the actions to strengthen projects, education, practical skills, and entry-level evidence. {% endif %}Scores reflect readable PDF text and common document signals. Confirm every claim, number, and skill before adding it to your resume.
         </section>
+        {% endif %}
         {% else %}
         <div class="alert alert-secondary">The review could not be displayed. <a href="{{ url_for('resume.resume_home') }}">Try another upload.</a></div>
         {% endif %}

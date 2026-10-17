@@ -4,6 +4,7 @@ from routes.about import about
 from routes.admin import admin
 from routes.auth import auth
 from routes.chatbot import chatbot
+from routes.career_tools import career_tools
 from routes.dashboard import dashboard
 from routes.interview import interview
 from routes.profile import profile
@@ -34,6 +35,7 @@ app.register_blueprint(profile)
 app.register_blueprint(dashboard)
 app.register_blueprint(roadmap)
 app.register_blueprint(chatbot)
+app.register_blueprint(career_tools)
 app.register_blueprint(about)
 
 

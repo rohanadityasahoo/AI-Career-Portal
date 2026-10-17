@@ -66,6 +66,95 @@ def ensure_career_roadmaps_table(cursor):
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     """)
 
+def ensure_career_tools_schema(cursor):
+  """Ensure tables used by the job-search tools exist."""
+  cursor.execute(
+      """
+      CREATE TABLE IF NOT EXISTS job_applications (
+          application_id INT NOT NULL AUTO_INCREMENT,
+          student_id INT NOT NULL,
+          company_name VARCHAR(150) NOT NULL,
+          job_title VARCHAR(150) NOT NULL,
+          status VARCHAR(30) NOT NULL DEFAULT 'Saved',
+          priority VARCHAR(20) NOT NULL DEFAULT 'Medium',
+          location VARCHAR(150) DEFAULT NULL,
+          application_url VARCHAR(500) DEFAULT NULL,
+          source VARCHAR(120) DEFAULT NULL,
+          job_description TEXT DEFAULT NULL,
+          next_action_date DATE DEFAULT NULL,
+          next_action VARCHAR(500) DEFAULT NULL,
+          last_contacted DATE DEFAULT NULL,
+          match_score TINYINT UNSIGNED DEFAULT NULL,
+          notes TEXT DEFAULT NULL,
+          created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+              ON UPDATE CURRENT_TIMESTAMP,
+          PRIMARY KEY (application_id),
+          KEY idx_job_applications_student_id (student_id),
+          CONSTRAINT fk_job_applications_student
+              FOREIGN KEY (student_id) REFERENCES students(student_id)
+              ON DELETE CASCADE
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+      """
+  )
+
+
+  cursor.execute(
+      """
+      SELECT column_name AS column_name
+      FROM information_schema.columns
+      WHERE table_schema = DATABASE()
+        AND table_name = 'job_applications'
+      """
+  )
+  existing_columns = {
+      row['column_name'] for row in cursor.fetchall()
+  }
+  application_columns = {
+      'priority': "VARCHAR(20) NOT NULL DEFAULT 'Medium' AFTER status",
+      'source': 'VARCHAR(120) DEFAULT NULL AFTER application_url',
+      'job_description': 'TEXT DEFAULT NULL AFTER source',
+      'next_action': 'VARCHAR(500) DEFAULT NULL AFTER next_action_date',
+      'last_contacted': 'DATE DEFAULT NULL AFTER next_action',
+      'match_score': 'TINYINT UNSIGNED DEFAULT NULL AFTER last_contacted',
+  }
+  for column_name, definition in application_columns.items():
+    if column_name not in existing_columns:
+      cursor.execute(
+          'ALTER TABLE job_applications ADD COLUMN '
+          + column_name + ' ' + definition
+      )
+
+
+
+def ensure_resume_analysis_schema(cursor):
+  """Keep profile-specific resume history compatible with existing databases."""
+  cursor.execute(
+      """
+      SELECT column_name AS column_name
+      FROM information_schema.columns
+      WHERE table_schema = DATABASE()
+        AND table_name = 'resume_analysis'
+        AND column_name = 'profile_type'
+      """
+  )
+  if not cursor.fetchone():
+    cursor.execute(
+        """
+        ALTER TABLE resume_analysis
+        ADD COLUMN profile_type VARCHAR(20) NOT NULL DEFAULT 'fresher'
+        AFTER student_id
+        """
+    )
+    cursor.execute(
+        """
+        UPDATE resume_analysis AS analysis
+        INNER JOIN students AS student ON student.student_id = analysis.student_id
+        SET analysis.profile_type = student.profile_type
+        WHERE analysis.student_id IS NOT NULL
+        """
+    )
+
 
 def ensure_auth_schema(cursor):
   """Keep role and admin tables available for existing installations."""

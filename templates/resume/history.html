@@ -14,7 +14,7 @@ Resume History | CareerPilot AI
             <h2>Resume Analysis History</h2>
 
             <p class="text-muted mb-0">
-                Previous resume analysis results
+                Previous resume analysis results for your profile track
             </p>
         </div>
 
@@ -39,6 +39,7 @@ Resume History | CareerPilot AI
                     <thead>
                         <tr>
                             <th>#</th>
+                            <th>Track</th>
                             <th>Resume</th>
                             <th>Date</th>
                         </tr>
@@ -52,6 +53,12 @@ Resume History | CareerPilot AI
 
                             <td>
                                 {{ analysis.analysis_id }}
+                            </td>
+
+                            <td>
+                                <span class="badge {% if analysis.profile_type == 'experienced' %}text-bg-success{% else %}text-bg-primary{% endif %}">
+                                    {{ 'Working professional' if analysis.profile_type == 'experienced' else 'Fresher' }}
+                                </span>
                             </td>
 
                             <td>

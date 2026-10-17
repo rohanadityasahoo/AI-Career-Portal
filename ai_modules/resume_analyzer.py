@@ -83,7 +83,7 @@ def extract_resume_text(pdf_path: str) -> str:
     return "\n".join(extracted_pages).strip()
 
 
-def build_resume_snapshot(resume_text: str, job_description: str = "") -> dict:
+def build_resume_snapshot(resume_text: str, job_description: str = "", profile_type: str = "fresher") -> dict:
     """Return a transparent, heuristic snapshot based only on extracted text.
 
     Scores are diagnostic indicators, not predictions of ATS behaviour or
@@ -114,12 +114,21 @@ def build_resume_snapshot(resume_text: str, job_description: str = "") -> dict:
         if name != "Contact details"
     }
     sections["Contact details"] = has_email or has_phone or has_link
-    required_sections = ("Experience", "Education", "Skills", "Projects")
-    section_score = round(100 * sum(sections[name] for name in required_sections) / len(required_sections))
+    profile_type = "experienced" if profile_type == "experienced" else "fresher"
     contact_score = (has_email + has_phone + has_link) / 3
     keyword_score = min(len(detected_skills) / 10, 1)
-    ats_score = round(100 * (0.45 * (section_score / 100) + 0.25 * contact_score + 0.30 * keyword_score))
-    content_score = round(100 * min(1, 0.25 * min(len(words) / 300, 1) + 0.20 * min(len(bullet_lines) / 8, 1) + 0.30 * min(len(action_lines) / 5, 1) + 0.25 * min(len(metric_lines) / 3, 1)))
+    if profile_type == "experienced":
+        required_sections = ("Professional summary", "Experience", "Skills")
+        profile_focus = "Professional impact"
+        section_score = round(100 * sum(sections[name] for name in required_sections) / len(required_sections))
+        content_score = round(100 * min(1, 0.15 * min(len(words) / 450, 1) + 0.30 * min(len(bullet_lines) / 10, 1) + 0.30 * min(len(action_lines) / 6, 1) + 0.25 * min(len(metric_lines) / 4, 1)))
+        ats_score = round(100 * (0.35 * (section_score / 100) + 0.20 * contact_score + 0.20 * keyword_score + 0.25 * (content_score / 100)))
+    else:
+        required_sections = ("Education", "Projects", "Skills")
+        profile_focus = "Entry-level readiness"
+        section_score = round(100 * sum(sections[name] for name in required_sections) / len(required_sections))
+        content_score = round(100 * min(1, 0.25 * min(len(words) / 350, 1) + 0.25 * min(len(bullet_lines) / 8, 1) + 0.25 * min(len(action_lines) / 5, 1) + 0.15 * min(len(metric_lines) / 3, 1) + 0.10 * int(sections.get("Certifications", False))))
+        ats_score = round(100 * (0.40 * (section_score / 100) + 0.20 * contact_score + 0.25 * keyword_score + 0.15 * (content_score / 100)))
     skill_score = round(100 * keyword_score)
     job_match = round(100 * len(matched_job_skills) / len(job_skills)) if job_skills else None
 
@@ -127,8 +136,11 @@ def build_resume_snapshot(resume_text: str, job_description: str = "") -> dict:
         sections=sections, has_email=has_email, has_phone=has_phone, has_link=has_link,
         word_count=len(words), bullet_count=len(bullet_lines), action_count=len(action_lines),
         metric_count=len(metric_lines), detected_skills=detected_skills,
+        profile_type=profile_type, required_sections=required_sections,
     )
     return {
+        "profile_type": profile_type, "profile_focus": profile_focus,
+        "required_sections": required_sections,
         "scores": {"ATS readiness": ats_score, "Section coverage": section_score, "Content evidence": content_score, "Skill visibility": skill_score},
         "sections": sections, "detected_skills": detected_skills, "job_skills": job_skills,
         "matched_job_skills": matched_job_skills, "job_match": job_match,
@@ -154,9 +166,9 @@ def _has_section(lines: Iterable[str], pattern: str) -> bool:
     return False
 
 
-def _build_observations(*, sections: dict[str, bool], has_email: bool, has_phone: bool, has_link: bool, word_count: int, bullet_count: int, action_count: int, metric_count: int, detected_skills: Iterable[str]) -> list[str]:
+def _build_observations(*, sections: dict[str, bool], has_email: bool, has_phone: bool, has_link: bool, word_count: int, bullet_count: int, action_count: int, metric_count: int, detected_skills: Iterable[str], profile_type: str, required_sections: Iterable[str]) -> list[str]:
     observations: list[str] = []
-    missing_sections = [name for name in ("Experience", "Education", "Skills", "Projects") if not sections[name]]
+    missing_sections = [name for name in required_sections if not sections[name]]
     if missing_sections:
         observations.append("No clear " + ", ".join(missing_sections) + " heading was detected.")
     if not has_email:
@@ -172,7 +184,10 @@ def _build_observations(*, sections: dict[str, bool], has_email: bool, has_phone
     if action_count < 3:
         observations.append("Few action-led bullets were detected.")
     if metric_count < 2:
-        observations.append("Few quantified outcomes were detected; add numbers only when you can verify them.")
+        if profile_type == "experienced":
+            observations.append("Few quantified outcomes were detected; show scale, ownership, or measurable business impact where you can verify it.")
+        else:
+            observations.append("Few quantified outcomes were detected; quantify project scale or results only when you can verify them.")
     if not list(detected_skills):
         observations.append("No skills from the supported evidence list were detected; use a clearly labelled skills section.")
     return observations[:6]

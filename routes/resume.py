@@ -1,8 +1,13 @@
 import os
 import uuid
+
 from ai_modules.career_ai import analyze_resume
 from ai_modules.resume_analyzer import extract_resume_text
-from database.db import get_db_connection
+from database.db import (
+    ensure_auth_schema,
+    ensure_resume_analysis_schema,
+    get_db_connection,
+)
 from flask import Blueprint, current_app, redirect, render_template, request, session
 from werkzeug.utils import secure_filename
 
@@ -23,148 +28,142 @@ def clean_optional_text(value, limit):
   return ' '.join(str(value or '').split())[:limit]
 
 
+def _student_profile_type():
+  """Return the signed-in student's resume coaching track."""
+  conn = get_db_connection()
+  try:
+    with conn.cursor() as cursor:
+      ensure_auth_schema(cursor)
+      conn.commit()
+      cursor.execute(
+          'SELECT profile_type FROM students WHERE student_id = %s',
+          (session['student_id'],),
+      )
+      row = cursor.fetchone() or {}
+  finally:
+    conn.close()
+  return 'experienced' if row.get('profile_type') == 'experienced' else 'fresher'
+
+
+def _upload_page(profile_type, tool_mode, error=None):
+  return render_template(
+      'resume/upload.html',
+      profile_type=profile_type,
+      tool_mode=tool_mode,
+      error=error,
+  )
+
+
 @resume.route('/resume', methods=['GET', 'POST'])
 def resume_home():
   if 'student_id' not in session:
     return redirect('/login')
 
+  profile_type = _student_profile_type()
+  tool_mode = (
+      request.args.get('mode') == 'tailor'
+      or request.form.get('mode') == 'tailor'
+  )
+
   if request.method == 'POST':
-    # -----------------------------
-    # Validate uploaded file
-    # -----------------------------
     if 'resume' not in request.files:
-      return (
-          render_template(
-              'resume/upload.html', error='No resume file selected.'
-          ),
-          400,
-      )
+      return _upload_page(profile_type, tool_mode, 'No resume file selected.'), 400
 
     file = request.files['resume']
-
     if not file or file.filename == '':
-      return (
-          render_template(
-              'resume/upload.html', error='No resume file selected.'
-          ),
-          400,
-      )
+      return _upload_page(profile_type, tool_mode, 'No resume file selected.'), 400
 
     if not allowed_file(file.filename):
-      return (
-          render_template(
-              'resume/upload.html', error='Only PDF files are allowed.'
-          ),
-          400,
-      )
+      return _upload_page(profile_type, tool_mode, 'Only PDF files are allowed.'), 400
 
-    # File extensions are only a convenience signal. Check the PDF signature
-    # as well before handing the upload to a PDF parser.
+    # Check the PDF signature before handing the upload to a parser.
     file_header = file.stream.read(8)
     file.stream.seek(0)
     if not file_header.startswith(b'%PDF-'):
-      return (
-          render_template(
-              'resume/upload.html',
-              error='The uploaded file does not appear to be a valid PDF.',
-          ),
-          400,
-      )
+      return _upload_page(
+          profile_type,
+          tool_mode,
+          'The uploaded file does not appear to be a valid PDF.',
+      ), 400
 
     target_role = clean_optional_text(request.form.get('target_role'), 120)
     job_description = clean_optional_text(
         request.form.get('job_description'), 8000
     )
 
-    # -----------------------------
-    # Save Resume with unique name
-    # -----------------------------
     safe_name = secure_filename(file.filename) or 'resume.pdf'
     unique_filename = (
         f"student_{session['student_id']}_{uuid.uuid4().hex[:8]}_{safe_name}"
     )
-
     upload_path = os.path.join(current_app.root_path, UPLOAD_FOLDER)
     os.makedirs(upload_path, exist_ok=True)
     file_path = os.path.join(upload_path, unique_filename)
 
-    # -----------------------------
-    # Extract Resume Text
-    # -----------------------------
     try:
       file.save(file_path)
       resume_text = extract_resume_text(file_path)
     except OSError:
-      return (
-          render_template(
-              'resume/upload.html',
-              error='We could not process this upload. Please try the PDF again.',
-          ),
-          500,
-      )
+      return _upload_page(
+          profile_type,
+          tool_mode,
+          'We could not process this upload. Please try the PDF again.',
+      ), 500
     finally:
-      # Analysis uses extracted text only; retaining a student's source resume
-      # would create an unnecessary privacy and storage burden.
+      # Analysis uses extracted text only; source resumes are not retained.
       try:
         os.remove(file_path)
       except OSError:
         pass
 
     if not resume_text or not resume_text.strip():
-      return (
-          render_template(
-              'resume/upload.html',
-              error='Could not extract readable text from this PDF.',
-          ),
-          400,
-      )
+      return _upload_page(
+          profile_type,
+          tool_mode,
+          'Could not extract readable text from this PDF.',
+      ), 400
 
-    # Local evidence is always calculated; Groq adds a detailed editorial
-    # layer when configured. The analysis therefore remains useful if the
-    # AI provider is unavailable.
     ai_feedback = analyze_resume(
         resume_text,
         target_role=target_role,
         job_description=job_description,
+        profile_type=profile_type,
     )
     if not ai_feedback:
-      return (
-          render_template(
-              'resume/upload.html',
-              error='We could not analyze the readable text in this PDF. Please try another file.',
-          ),
-          503,
-      )
+      return _upload_page(
+          profile_type,
+          tool_mode,
+          'We could not analyze the readable text in this PDF. Please try another file.',
+      ), 503
 
     missing_skills = ai_feedback.get('skill_gaps', [])
     detected_skills = ai_feedback.get('detected_skills', [])
     scores = ai_feedback.get('scores', {})
     job_alignment = ai_feedback.get('job_alignment') or {}
 
-    # -----------------------------
-    # Database Persistence
-    # -----------------------------
     history_saved = True
     conn = None
     try:
       conn = get_db_connection()
       with conn.cursor() as cursor:
+        ensure_resume_analysis_schema(cursor)
         cursor.execute(
             """
-                    INSERT INTO resume_analysis (
-                        student_id,
-                        resume_filename,
-                        ats_score,
-                        jd_match_percentage,
-                        skill_score,
-                        section_score,
-                        content_score,
-                        matched_skills,
-                        missing_skills
-                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-                    """,
+            INSERT INTO resume_analysis (
+                student_id,
+                profile_type,
+                resume_filename,
+                ats_score,
+                jd_match_percentage,
+                skill_score,
+                section_score,
+                content_score,
+                matched_skills,
+                missing_skills
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            """,
             (
                 session.get('student_id'),
+                profile_type,
                 safe_name,
                 ai_feedback.get('overall_score'),
                 job_alignment.get('score'),
@@ -177,8 +176,6 @@ def resume_home():
         )
       conn.commit()
     except Exception:
-      # The current analysis should not be discarded if history storage is
-      # temporarily down. No resume text is written to the application log.
       current_app.logger.exception('Could not save resume analysis history.')
       history_saved = False
     finally:
@@ -186,10 +183,13 @@ def resume_home():
         conn.close()
 
     return render_template(
-        'resume/result.html', ai_feedback=ai_feedback, history_saved=history_saved
+        'resume/result.html',
+        ai_feedback=ai_feedback,
+        history_saved=history_saved,
+        profile_type=profile_type,
     )
 
-  return render_template('resume/upload.html')
+  return _upload_page(profile_type, tool_mode)
 
 
 @resume.route('/resume/history')
@@ -200,16 +200,15 @@ def resume_history():
   conn = get_db_connection()
   try:
     with conn.cursor() as cursor:
+      ensure_resume_analysis_schema(cursor)
+      conn.commit()
       cursor.execute(
           """
-                SELECT
-                    analysis_id,
-                    resume_filename,
-                    created_at
-                FROM resume_analysis
-                WHERE student_id = %s
-                ORDER BY created_at DESC
-                """,
+          SELECT analysis_id, profile_type, resume_filename, created_at
+          FROM resume_analysis
+          WHERE student_id = %s
+          ORDER BY created_at DESC, analysis_id DESC
+          """,
           (session['student_id'],),
       )
       analyses = cursor.fetchall()
