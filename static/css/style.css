@@ -2788,3 +2788,32 @@ footer{
     .professional-resume-action-card { grid-template-columns: 1fr; }
     .professional-resume-action-heading { align-items: start; flex-direction: column; }
 }
+.career-ai-panel {
+    background: linear-gradient(145deg, #F0FDF4, #FFFFFF);
+    border-color: #A7F3D0;
+    box-shadow: 0 0.8rem 2rem rgba(21, 128, 61, 0.08);
+}
+
+.career-ai-panel h2 { margin-bottom: 0.55rem; }
+.career-ai-badge {
+    background: #DCFCE7;
+    border: 1px solid #86EFAC;
+    border-radius: 999px;
+    color: #15803D;
+    display: inline-flex;
+    font-size: 0.68rem;
+    font-weight: 850;
+    padding: 0.38rem 0.58rem;
+    white-space: nowrap;
+}
+
+.career-ai-summary { color: #334155; line-height: 1.6; margin: 0.25rem 0 0; }
+.career-ai-insight-list { display: grid; gap: 0.7rem; margin-top: 1.1rem; }
+.career-ai-insight-list article { background: #FFFFFF; border-left: 3px solid #22C55E; border-radius: 0.55rem; padding: 0.7rem 0.8rem; }
+.career-ai-insight-list strong { color: #14532D; display: block; font-size: 0.8rem; margin-bottom: 0.18rem; }
+.career-ai-insight-list p { color: #475569; font-size: 0.82rem; line-height: 1.5; margin: 0; }
+.career-ai-notice { color: #64748B; display: block; line-height: 1.45; margin-top: 1rem; }
+.career-ai-verification { background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 0.7rem; color: #92400E; padding: 0.8rem 0.9rem; }
+.career-ai-verification strong { display: block; font-size: 0.78rem; margin-bottom: 0.35rem; }
+.career-ai-verification ul { margin: 0; padding-left: 1rem; }
+.career-ai-verification li { font-size: 0.78rem; line-height: 1.5; }

@@ -1,6 +1,12 @@
 import re
 from datetime import date, datetime
 
+from ai_modules.career_tools_ai import (
+    cover_letter_draft,
+    job_match_insights,
+    pipeline_insights,
+    skill_gap_insights,
+)
 from database.db import ensure_auth_schema, ensure_career_tools_schema, get_db_connection
 from flask import Blueprint, Response, redirect, render_template, request, session, url_for
 from routes.auth import login_required
@@ -511,9 +517,14 @@ def job_matcher():
   has_input = any(form.values())
   matches = _rank_roles(form['target_role'], form['skills'], form['job_description']) if has_input else []
   custom_fit = _custom_job_fit(form['target_role'], form['skills'], form['job_description'], form['location'], form['work_preference'])
+  ai_insight = (
+      job_match_insights(profile, form, custom_fit, matches)
+      if request.method == 'POST' and has_input else None
+  )
   return render_template(
       'tools/job_matcher.html', profile=profile, form=form,
-      matches=matches, custom_fit=custom_fit, active_tool='job-matcher',
+      matches=matches, custom_fit=custom_fit, ai_insight=ai_insight,
+      active_tool='job-matcher',
   )
 
 
@@ -527,9 +538,13 @@ def skill_gap():
       'job_description': _clean(request.form.get('job_description'), 8000),
   }
   gap = _gap_report(form['target_role'], form['skills'], form['job_description'])
+  ai_insight = (
+      skill_gap_insights(profile, form, gap)
+      if request.method == 'POST' else None
+  )
   return render_template(
       'tools/skill_gap.html', profile=profile, form=form,
-      gap=gap, active_tool='skill-gap',
+      gap=gap, ai_insight=ai_insight, active_tool='skill-gap',
   )
 
 
@@ -549,12 +564,21 @@ def cover_letter():
   }
   error = None
   letter = None
+  letter_source = None
+  ai_verification = []
   tailoring = _tailoring_summary(form)
   if request.method == 'POST':
     if not form['company'] or not form['target_role']:
       error = 'Add both the company name and target role to create a draft.'
     else:
-      letter = _cover_letter(form)
+      ai_letter = cover_letter_draft(form, tailoring)
+      if ai_letter:
+        letter = ai_letter['letter']
+        ai_verification = ai_letter['verification_points']
+        letter_source = 'ai'
+      else:
+        letter = _cover_letter(form)
+        letter_source = 'template'
       if request.form.get('action') == 'download':
         filename = re.sub(r'[^a-z0-9]+', '-', form['target_role'].lower()).strip('-') or 'cover-letter'
         return Response(
@@ -564,7 +588,8 @@ def cover_letter():
         )
   return render_template(
       'tools/cover_letter.html', profile=profile, form=form,
-      letter=letter, tailoring=tailoring, error=error, active_tool='cover-letter',
+      letter=letter, letter_source=letter_source, ai_verification=ai_verification,
+      tailoring=tailoring, error=error, active_tool='cover-letter',
   )
 
 
@@ -677,10 +702,14 @@ def application_tracker():
   status_filter = _clean(request.args.get('status'), 30)
   priority_filter = _clean(request.args.get('priority'), 20)
   applications, metrics = _tracker_snapshot(search, status_filter, priority_filter)
+  ai_insight = (
+      pipeline_insights(_profile_context(), applications, metrics)
+      if request.args.get('ai') == '1' else None
+  )
   return render_template(
       'tools/application_tracker.html',
       applications=applications, metrics=metrics, statuses=APPLICATION_STATUSES,
-      priorities=APPLICATION_PRIORITIES, error=error,
+      priorities=APPLICATION_PRIORITIES, error=error, ai_insight=ai_insight,
       saved=request.args.get('saved') == '1', search=search,
       status_filter=status_filter, priority_filter=priority_filter,
       active_tool='application-tracker',
