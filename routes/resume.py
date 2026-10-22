@@ -3,6 +3,7 @@ import uuid
 
 from ai_modules.career_ai import analyze_resume
 from ai_modules.resume_analyzer import extract_resume_text
+from ai_modules.usage import ai_feature_context
 from database.db import (
     ensure_auth_schema,
     ensure_resume_analysis_schema,
@@ -122,12 +123,13 @@ def resume_home():
           'Could not extract readable text from this PDF.',
       ), 400
 
-    ai_feedback = analyze_resume(
-        resume_text,
-        target_role=target_role,
-        job_description=job_description,
-        profile_type=profile_type,
-    )
+    with ai_feature_context('resume_analyzer', session.get('student_id')):
+      ai_feedback = analyze_resume(
+          resume_text,
+          target_role=target_role,
+          job_description=job_description,
+          profile_type=profile_type,
+      )
     if not ai_feedback:
       return _upload_page(
           profile_type,

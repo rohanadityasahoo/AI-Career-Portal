@@ -13,6 +13,20 @@ import pymysql
 from werkzeug.security import generate_password_hash
 
 
+AI_FEATURE_DEFINITIONS = (
+  ('resume_analyzer', 'Resume analyzer'),
+  ('dashboard_insights', 'Dashboard insights'),
+  ('career_chatbot', 'Career chatbot'),
+  ('interview_questions', 'Interview question generator'),
+  ('interview_evaluator', 'Interview answer evaluator'),
+  ('roadmap_generator', 'Career roadmap generator'),
+  ('job_matcher', 'Job matcher coaching'),
+  ('skill_gap', 'Skill gap coaching'),
+  ('cover_letter', 'Cover letter generator'),
+  ('application_tracker', 'Application tracker coaching'),
+)
+
+
 def _is_password_hash(value):
   """Return whether a configured password value has Werkzeug hash format."""
   if not isinstance(value, str):
@@ -163,6 +177,52 @@ def ensure_resume_analysis_schema(cursor):
     )
 
 
+def ensure_ai_management_schema(cursor):
+  """Create AI telemetry and feature controls for admin operations."""
+  cursor.execute(
+      """
+      CREATE TABLE IF NOT EXISTS ai_feature_flags (
+          feature_key VARCHAR(80) NOT NULL,
+          label VARCHAR(120) NOT NULL,
+          is_enabled TINYINT(1) NOT NULL DEFAULT 1,
+          updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+              ON UPDATE CURRENT_TIMESTAMP,
+          PRIMARY KEY (feature_key)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+      """
+  )
+  cursor.execute(
+      """
+      CREATE TABLE IF NOT EXISTS ai_usage_logs (
+          request_id BIGINT NOT NULL AUTO_INCREMENT,
+          feature_key VARCHAR(80) NOT NULL,
+          student_id INT DEFAULT NULL,
+          model VARCHAR(160) DEFAULT NULL,
+          status VARCHAR(30) NOT NULL,
+          latency_ms INT DEFAULT NULL,
+          error_code VARCHAR(120) DEFAULT NULL,
+          created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          PRIMARY KEY (request_id),
+          KEY idx_ai_usage_feature (feature_key),
+          KEY idx_ai_usage_status (status),
+          KEY idx_ai_usage_created_at (created_at),
+          CONSTRAINT fk_ai_usage_student
+              FOREIGN KEY (student_id) REFERENCES students(student_id)
+              ON DELETE SET NULL
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+      """
+  )
+  for feature_key, label in AI_FEATURE_DEFINITIONS:
+    cursor.execute(
+        """
+        INSERT INTO ai_feature_flags (feature_key, label, is_enabled)
+        VALUES (%s, %s, 1)
+        ON DUPLICATE KEY UPDATE label = %s
+        """,
+        (feature_key, label, label),
+    )
+
+
 def ensure_auth_schema(cursor):
   """Keep role and admin tables available for existing installations."""
   cursor.execute(
@@ -237,6 +297,7 @@ def ensure_auth_schema(cursor):
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
       """
   )
+  ensure_ai_management_schema(cursor)
 
   cursor.execute(
       """

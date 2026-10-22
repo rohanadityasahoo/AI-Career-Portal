@@ -1,0 +1,53 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}AI Management | Admin | CareerPilot AI{% endblock %}
+
+{% block content %}
+<section class="admin-dashboard-page py-4 py-lg-5">
+    <div class="container">
+        <div class="admin-page-heading">
+            <div><a class="admin-back-link" href="{{ url_for('admin.admin_dashboard') }}">&larr; Back to overview</a><span class="dashboard-eyebrow">AI operations</span><h1>AI management</h1><p>Monitor provider usage and control which AI features can make external requests.</p></div>
+            <a class="btn btn-outline-primary" href="{{ url_for('admin.admin_activity') }}">View audit log</a>
+        </div>
+
+        {% include "admin/_messages.html" %}
+        {% if error %}<div class="alert alert-warning" role="alert">{{ error }}</div>{% endif %}
+
+        <div class="admin-ai-health mb-4">
+            <div><span class="dashboard-eyebrow">Provider</span><h2>Groq</h2><p>Model: <strong>{{ ai_model }}</strong></p></div>
+            <div class="admin-ai-health-status"><span class="admin-status-badge {{ 'admin-status-active' if ai_configured else 'admin-status-suspended' }}">{{ 'API key configured' if ai_configured else 'API key missing' }}</span><small>Keys and prompts are never shown in this panel.</small></div>
+        </div>
+
+        <div class="row g-3 mb-4">
+            <div class="col-sm-6 col-xl-3"><article class="admin-stat-card admin-stat-card-usage"><span>AI requests</span><strong>{{ stats.total_requests }}</strong><small>All recorded provider requests</small></article></div>
+            <div class="col-sm-6 col-xl-3"><article class="admin-stat-card admin-stat-card-fresher"><span>Success rate</span><strong>{{ stats.success_rate }}%</strong><small>{{ stats.successful_requests }} successful responses</small></article></div>
+            <div class="col-sm-6 col-xl-3"><article class="admin-stat-card admin-stat-card-new"><span>Last 24 hours</span><strong>{{ stats.last_24_hours }}</strong><small>Recent AI requests</small></article></div>
+            <div class="col-sm-6 col-xl-3"><article class="admin-stat-card admin-stat-card-experienced"><span>Failed requests</span><strong>{{ stats.failed_requests }}</strong><small>{{ stats.disabled_requests }} disabled by admin</small></article></div>
+        </div>
+
+        <article class="card border-0 shadow-sm admin-users-card mb-4">
+            <div class="card-body p-4 p-lg-5">
+                <div class="admin-panel-heading"><div><div class="dashboard-eyebrow">Feature controls</div><h2 class="h4 mb-1">AI feature switches</h2><p class="text-muted mb-0">{{ enabled_features }} of {{ feature_count }} features are enabled. Disabled features use their local fallback behavior.</p></div></div>
+                {% if features %}
+                <div class="table-responsive"><table class="table align-middle admin-users-table admin-directory-table"><thead><tr><th>Feature</th><th>Status</th><th>Requests</th><th>Successes</th><th>Failures</th><th>Last used</th><th></th></tr></thead><tbody>
+                {% for feature in features %}
+                <tr><td><strong>{{ feature.label }}</strong><small class="d-block text-muted">{{ feature.feature_key }}</small></td><td><span class="admin-status-badge {{ 'admin-status-active' if feature.is_enabled else 'admin-status-suspended' }}">{{ 'Enabled' if feature.is_enabled else 'Disabled' }}</span></td><td>{{ feature.total_requests }}</td><td>{{ feature.successful_requests }}</td><td>{{ feature.failed_requests }}</td><td>{{ feature.last_used.strftime('%d %b %Y, %I:%M %p') if feature.last_used else 'Never' }}</td><td><form method="POST" action="{{ url_for('admin.update_ai_feature', feature_key=feature.feature_key) }}"><input type="hidden" name="is_enabled" value="{{ '0' if feature.is_enabled else '1' }}"><button class="btn btn-sm {{ 'btn-outline-danger' if feature.is_enabled else 'btn-outline-success' }}" type="submit">{{ 'Disable' if feature.is_enabled else 'Enable' }}</button></form></td></tr>
+                {% endfor %}
+                </tbody></table></div>
+                {% else %}<div class="admin-empty-state">No AI features are registered yet.</div>{% endif %}
+            </div>
+        </article>
+
+        <article class="card border-0 shadow-sm admin-users-card">
+            <div class="card-body p-4 p-lg-5">
+                <div class="admin-panel-heading"><div><div class="dashboard-eyebrow">Request telemetry</div><h2 class="h4 mb-1">Recent AI activity</h2><p class="text-muted mb-0">Only feature, status, model, latency, and error codes are retained.</p></div></div>
+                {% if recent_logs %}
+                <div class="table-responsive"><table class="table align-middle admin-users-table admin-directory-table"><thead><tr><th>Feature</th><th>Status</th><th>Model</th><th>Latency</th><th>Error</th><th>Time</th></tr></thead><tbody>
+                {% for log in recent_logs %}<tr><td>{{ log.label or log.feature_key }}</td><td><span class="admin-ai-status admin-ai-status-{{ log.status }}">{{ log.status|replace('_', ' ')|title }}</span></td><td>{{ log.model or '-' }}</td><td>{{ log.latency_ms ~ ' ms' if log.latency_ms is not none else '-' }}</td><td>{{ log.error_code or '-' }}</td><td>{{ log.created_at.strftime('%d %b %Y, %I:%M %p') if log.created_at else '-' }}</td></tr>{% endfor %}
+                </tbody></table></div>
+                {% else %}<div class="admin-empty-state">No AI requests have been recorded yet.</div>{% endif %}
+            </div>
+        </article>
+    </div>
+</section>
+{% endblock %}

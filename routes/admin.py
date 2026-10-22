@@ -1,6 +1,9 @@
 from functools import wraps
+import os
 
+from ai_modules.career_ai import is_configured
 from database.db import ensure_auth_schema, get_db_connection
+from database.db import AI_FEATURE_DEFINITIONS
 from flask import (
     Blueprint,
     abort,
@@ -19,6 +22,7 @@ admin = Blueprint('admin', __name__, url_prefix='/admin')
 
 PROFILE_TYPES = {'fresher', 'experienced'}
 ACCOUNT_STATUSES = {'active', 'suspended'}
+AI_FEATURE_KEYS = dict(AI_FEATURE_DEFINITIONS)
 
 
 def admin_required(f):
@@ -242,6 +246,127 @@ def admin_dashboard():
       activities=activities,
       error=error,
   )
+
+
+@admin.route('/ai')
+@admin_required
+def ai_management():
+  conn = None
+  stats = {
+      'total_requests': 0,
+      'successful_requests': 0,
+      'failed_requests': 0,
+      'disabled_requests': 0,
+      'not_configured_requests': 0,
+      'last_24_hours': 0,
+      'success_rate': 0,
+  }
+  features = []
+  recent_logs = []
+  error = None
+  try:
+    conn = get_db_connection()
+    with conn.cursor() as cursor:
+      ensure_auth_schema(cursor)
+      conn.commit()
+      cursor.execute(
+          """
+          SELECT
+              COUNT(*) AS total_requests,
+              COALESCE(SUM(status = 'success'), 0) AS successful_requests,
+              COALESCE(SUM(status = 'error'), 0) AS failed_requests,
+              COALESCE(SUM(status = 'disabled'), 0) AS disabled_requests,
+              COALESCE(SUM(status = 'not_configured'), 0) AS not_configured_requests,
+              COALESCE(SUM(created_at >= DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 24 HOUR)), 0) AS last_24_hours
+          FROM ai_usage_logs
+          """
+      )
+      stats.update(cursor.fetchone() or {})
+      if stats['total_requests']:
+        stats['success_rate'] = round(
+            stats['successful_requests'] * 100 / stats['total_requests']
+        )
+      cursor.execute(
+          """
+          SELECT flags.feature_key, flags.label, flags.is_enabled,
+                 COUNT(logs.request_id) AS total_requests,
+                 COALESCE(SUM(logs.status = 'success'), 0) AS successful_requests,
+                 COALESCE(SUM(logs.status = 'error'), 0) AS failed_requests,
+                 MAX(logs.created_at) AS last_used
+          FROM ai_feature_flags AS flags
+          LEFT JOIN ai_usage_logs AS logs
+              ON logs.feature_key = flags.feature_key
+          GROUP BY flags.feature_key, flags.label, flags.is_enabled
+          ORDER BY flags.label
+          """
+      )
+      features = cursor.fetchall() or []
+      cursor.execute(
+          """
+          SELECT logs.feature_key, flags.label, logs.model, logs.status,
+                 logs.latency_ms, logs.error_code, logs.created_at
+          FROM ai_usage_logs AS logs
+          LEFT JOIN ai_feature_flags AS flags
+              ON flags.feature_key = logs.feature_key
+          ORDER BY logs.created_at DESC, logs.request_id DESC
+          LIMIT 40
+          """
+      )
+      recent_logs = cursor.fetchall() or []
+  except Exception:
+    error = 'We could not load AI management data right now.'
+  finally:
+    if conn:
+      conn.close()
+
+  return render_template(
+      'admin/ai.html',
+      ai_configured=is_configured(),
+      ai_model=os.getenv('GROQ_MODEL', 'openai/gpt-oss-20b').strip()
+      or 'openai/gpt-oss-20b',
+      enabled_features=sum(1 for feature in features if feature['is_enabled']),
+      feature_count=len(features),
+      stats=stats,
+      features=features,
+      recent_logs=recent_logs,
+      error=error,
+  )
+
+
+@admin.post('/ai/features/<feature_key>')
+@admin_required
+def update_ai_feature(feature_key):
+  if feature_key not in AI_FEATURE_KEYS:
+    abort(404)
+  is_enabled = request.form.get('is_enabled') == '1'
+  conn = None
+  try:
+    conn = get_db_connection()
+    with conn.cursor() as cursor:
+      ensure_auth_schema(cursor)
+      cursor.execute(
+          'UPDATE ai_feature_flags SET is_enabled = %s WHERE feature_key = %s',
+          (1 if is_enabled else 0, feature_key),
+      )
+      _record_activity_cursor(
+          cursor,
+          'ai_feature_enabled' if is_enabled else 'ai_feature_disabled',
+          target_type='ai_feature',
+          details=f"{AI_FEATURE_KEYS[feature_key]} {'enabled' if is_enabled else 'disabled'}.",
+      )
+    conn.commit()
+    flash(
+        f"{AI_FEATURE_KEYS[feature_key]} {'enabled' if is_enabled else 'disabled'}.",
+        'success',
+    )
+  except Exception:
+    if conn:
+      conn.rollback()
+    flash('We could not update that AI feature right now.', 'danger')
+  finally:
+    if conn:
+      conn.close()
+  return redirect(url_for('admin.ai_management'))
 
 
 @admin.route('/users')

@@ -2,6 +2,7 @@ from ai_modules.career_ai import (
     evaluate_interview_answer as evaluate_answer_with_groq,
     generate_interview_questions as generate_questions_with_groq,
 )
+from ai_modules.usage import ai_feature_context
 from database.db import get_db_connection
 from flask import (
     Blueprint,
@@ -370,9 +371,10 @@ def interview_home():
     session['interview_scores'] = []
     session['interview_rubrics'] = []
 
-    question_pool = generate_questions_with_groq(
-        role, domain, difficulty, TOTAL_QUESTIONS
-    )
+    with ai_feature_context('interview_questions', session.get('student_id')):
+      question_pool = generate_questions_with_groq(
+          role, domain, difficulty, TOTAL_QUESTIONS
+      )
     if not question_pool:
       return (
           render_template(
@@ -496,9 +498,10 @@ def evaluate_answer():
   if not role or not difficulty or not question.get('question'):
     return redirect(url_for('interview.interview_home'))
 
-  result = evaluate_answer_with_groq(
-      answer, question, role=role, difficulty=difficulty, domain=domain or ''
-  )
+  with ai_feature_context('interview_evaluator', session.get('student_id')):
+    result = evaluate_answer_with_groq(
+        answer, question, role=role, difficulty=difficulty, domain=domain or ''
+    )
   try:
     score = max(0, min(100, int(result.get('score', 0))))
   except (TypeError, ValueError):

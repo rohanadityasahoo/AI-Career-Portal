@@ -9,6 +9,7 @@ from ai_modules.career_tools_ai import (
 )
 from database.db import ensure_auth_schema, ensure_career_tools_schema, get_db_connection
 from flask import Blueprint, Response, redirect, render_template, request, session, url_for
+from ai_modules.usage import ai_feature_context
 from routes.auth import login_required
 
 career_tools = Blueprint('career_tools', __name__, url_prefix='/tools')
@@ -517,10 +518,10 @@ def job_matcher():
   has_input = any(form.values())
   matches = _rank_roles(form['target_role'], form['skills'], form['job_description']) if has_input else []
   custom_fit = _custom_job_fit(form['target_role'], form['skills'], form['job_description'], form['location'], form['work_preference'])
-  ai_insight = (
-      job_match_insights(profile, form, custom_fit, matches)
-      if request.method == 'POST' and has_input else None
-  )
+  ai_insight = None
+  if request.method == 'POST' and has_input:
+    with ai_feature_context('job_matcher', session.get('student_id')):
+      ai_insight = job_match_insights(profile, form, custom_fit, matches)
   return render_template(
       'tools/job_matcher.html', profile=profile, form=form,
       matches=matches, custom_fit=custom_fit, ai_insight=ai_insight,
@@ -538,10 +539,10 @@ def skill_gap():
       'job_description': _clean(request.form.get('job_description'), 8000),
   }
   gap = _gap_report(form['target_role'], form['skills'], form['job_description'])
-  ai_insight = (
-      skill_gap_insights(profile, form, gap)
-      if request.method == 'POST' else None
-  )
+  ai_insight = None
+  if request.method == 'POST':
+    with ai_feature_context('skill_gap', session.get('student_id')):
+      ai_insight = skill_gap_insights(profile, form, gap)
   return render_template(
       'tools/skill_gap.html', profile=profile, form=form,
       gap=gap, ai_insight=ai_insight, active_tool='skill-gap',
@@ -571,7 +572,8 @@ def cover_letter():
     if not form['company'] or not form['target_role']:
       error = 'Add both the company name and target role to create a draft.'
     else:
-      ai_letter = cover_letter_draft(form, tailoring)
+      with ai_feature_context('cover_letter', session.get('student_id')):
+        ai_letter = cover_letter_draft(form, tailoring)
       if ai_letter:
         letter = ai_letter['letter']
         ai_verification = ai_letter['verification_points']
@@ -702,10 +704,10 @@ def application_tracker():
   status_filter = _clean(request.args.get('status'), 30)
   priority_filter = _clean(request.args.get('priority'), 20)
   applications, metrics = _tracker_snapshot(search, status_filter, priority_filter)
-  ai_insight = (
-      pipeline_insights(_profile_context(), applications, metrics)
-      if request.args.get('ai') == '1' else None
-  )
+  ai_insight = None
+  if request.args.get('ai') == '1':
+    with ai_feature_context('application_tracker', session.get('student_id')):
+      ai_insight = pipeline_insights(_profile_context(), applications, metrics)
   return render_template(
       'tools/application_tracker.html',
       applications=applications, metrics=metrics, statuses=APPLICATION_STATUSES,

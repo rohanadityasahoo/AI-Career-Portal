@@ -1,6 +1,7 @@
 from database.db import get_db_connection
 from flask import Blueprint, redirect, render_template, request, session, url_for
 from ai_modules.career_ai import generate_chat_guidance
+from ai_modules.usage import ai_feature_context
 
 chatbot = Blueprint('chatbot', __name__)
 
@@ -109,11 +110,12 @@ def chatbot_home():
             )
 
         else:
-            latest_guidance = generate_chat_guidance(
-                user_message,
-                student_context=_student_context(),
-                chat_history=chat_history,
-            )
+            with ai_feature_context('career_chatbot', session.get('student_id')):
+                latest_guidance = generate_chat_guidance(
+                    user_message,
+                    student_context=_student_context(),
+                    chat_history=chat_history,
+                )
             if not latest_guidance:
                 error = (
                     'Career guidance could not be prepared. Please try again '

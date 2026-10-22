@@ -35,6 +35,35 @@ CREATE TABLE IF NOT EXISTS admin_activity_logs (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 
+-- AI administration tables are also created and seeded by ensure_auth_schema().
+-- The feature definitions are runtime-managed so existing installations upgrade safely.
+CREATE TABLE IF NOT EXISTS ai_feature_flags (
+    feature_key VARCHAR(80) NOT NULL,
+    label VARCHAR(120) NOT NULL,
+    is_enabled TINYINT(1) NOT NULL DEFAULT 1,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+        ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (feature_key)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS ai_usage_logs (
+    request_id BIGINT NOT NULL AUTO_INCREMENT,
+    feature_key VARCHAR(80) NOT NULL,
+    student_id INT DEFAULT NULL,
+    model VARCHAR(160) DEFAULT NULL,
+    status VARCHAR(30) NOT NULL,
+    latency_ms INT DEFAULT NULL,
+    error_code VARCHAR(120) DEFAULT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (request_id),
+    KEY idx_ai_usage_feature (feature_key),
+    KEY idx_ai_usage_status (status),
+    KEY idx_ai_usage_created_at (created_at),
+    CONSTRAINT fk_ai_usage_student
+        FOREIGN KEY (student_id) REFERENCES students(student_id)
+        ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 CREATE TABLE IF NOT EXISTS professional_profile (
     profile_id INT NOT NULL AUTO_INCREMENT,
     student_id INT NOT NULL,

@@ -5,6 +5,7 @@ from ai_modules.career_ai import (
     generate_roadmap as generate_roadmap_with_groq,
     normalise_roadmap,
 )
+from ai_modules.usage import ai_feature_context
 from database.db import ensure_career_roadmaps_table, get_db_connection
 from flask import Blueprint, jsonify, render_template, request, session, url_for
 from routes.auth import login_required
@@ -166,9 +167,10 @@ def roadmap_page():
       return jsonify({'error': error}), 400
     return _render_roadmap(target_role=target_role, error=error)
 
-  roadmap_data = generate_roadmap_with_groq(
-      target_role, _student_context(student_id)
-  )
+  with ai_feature_context('roadmap_generator', student_id):
+    roadmap_data = generate_roadmap_with_groq(
+        target_role, _student_context(student_id)
+    )
 
   saved = True
   storage_warning = ''

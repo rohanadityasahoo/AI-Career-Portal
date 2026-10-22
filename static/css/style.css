@@ -2858,6 +2858,16 @@ footer{
 .admin-settings-list dt { color: #64748B; font-size: 0.78rem; font-weight: 600; }
 .admin-settings-list dd { color: #1E3A5F; font-size: 0.78rem; font-weight: 750; margin: 0; overflow-wrap: anywhere; text-align: right; }
 .admin-message-stack .alert { border-radius: 0.7rem; font-size: 0.82rem; }
+.admin-ai-health { align-items: center; background: linear-gradient(135deg, #EFF6FF, #FFFFFF); border: 1px solid #BFDBFE; border-radius: 0.9rem; display: flex; gap: 1rem; justify-content: space-between; padding: 1.2rem 1.35rem; }
+.admin-ai-health h2 { color: #1E3A5F; font-size: 1.2rem; margin: 0.35rem 0 0.2rem; }
+.admin-ai-health p { color: #64748B; font-size: 0.78rem; margin: 0; }
+.admin-ai-health-status { align-items: flex-end; display: flex; flex-direction: column; gap: 0.4rem; text-align: right; }
+.admin-ai-health-status small { color: #64748B; font-size: 0.68rem; }
+.admin-ai-status { border-radius: 999px; display: inline-flex; font-size: 0.68rem; font-weight: 800; padding: 0.35rem 0.58rem; white-space: nowrap; }
+.admin-ai-status-success { background: #DCFCE7; color: #15803D; }
+.admin-ai-status-error { background: #FEE2E2; color: #B91C1C; }
+.admin-ai-status-disabled { background: #FEF3C7; color: #92400E; }
+.admin-ai-status-not_configured { background: #E2E8F0; color: #475569; }
 
 @media (max-width: 767.98px) {
     .admin-dashboard-hero, .admin-page-heading { align-items: start; flex-direction: column; }
@@ -2865,4 +2875,6 @@ footer{
     .admin-hero-actions .btn { flex: 1; }
     .admin-panel-heading { align-items: start; flex-direction: column; }
     .admin-detail-grid { grid-template-columns: 1fr; }
+    .admin-ai-health { align-items: flex-start; flex-direction: column; }
+    .admin-ai-health-status { align-items: flex-start; text-align: left; }
 }

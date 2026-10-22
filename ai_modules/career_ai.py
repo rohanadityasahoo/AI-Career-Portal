@@ -7,11 +7,13 @@ turning a missing API key or a rate limit into a user-facing error.
 
 import json
 import os
+import time
 from typing import Any
 
 import httpx
 
 from ai_modules.resume_analyzer import build_resume_snapshot
+from ai_modules.usage import current_ai_context, is_ai_feature_enabled, log_ai_request
 
 
 GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
@@ -37,8 +39,15 @@ def _chat_completion(
     json_mode: bool = False,
 ) -> str | None:
     """Call Groq without logging prompts, resumes, answers, or API keys."""
+    started_at = time.perf_counter()
+    feature_key = current_ai_context().get("feature_key")
+    if not is_ai_feature_enabled(feature_key):
+        log_ai_request(started_at, "disabled", "feature_disabled")
+        return None
+
     api_key = os.getenv("GROQ_API_KEY", "").strip()
     if not api_key:
+        log_ai_request(started_at, "not_configured", "missing_api_key")
         return None
 
     payload: dict[str, Any] = {
@@ -63,11 +72,17 @@ def _chat_completion(
         )
         response.raise_for_status()
         content = response.json()["choices"][0]["message"]["content"]
+    except httpx.HTTPStatusError as error:
+        log_ai_request(started_at, "error", f"http_{error.response.status_code}")
+        return None
     except (httpx.HTTPError, KeyError, TypeError, ValueError):
+        log_ai_request(started_at, "error", "provider_request_failed")
         return None
 
     if isinstance(content, str):
+        log_ai_request(started_at, "success")
         return content.strip()
+    log_ai_request(started_at, "error", "invalid_provider_response")
     return None
 
 

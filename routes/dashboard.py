@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from ai_modules.career_ai import build_dashboard_guidance, generate_dashboard_guidance
+from ai_modules.usage import ai_feature_context
 from database.db import ensure_auth_schema, ensure_career_roadmaps_table, get_db_connection
 from flask import Blueprint, jsonify, redirect, render_template, session, url_for
 from routes.auth import login_required
@@ -340,5 +341,6 @@ def experienced_dashboard():
 def dashboard_ai_insight():
   """Generate fresh optional AI coaching without blocking dashboard loading."""
   progress = _dashboard_snapshot(session['student_id'])
-  guidance = _add_action_links(generate_dashboard_guidance(progress))
+  with ai_feature_context('dashboard_insights', session.get('student_id')):
+    guidance = _add_action_links(generate_dashboard_guidance(progress))
   return jsonify({'guidance': guidance})
