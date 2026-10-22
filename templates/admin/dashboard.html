@@ -9,41 +9,81 @@
             <div>
                 <span class="dashboard-eyebrow">Control center</span>
                 <h1>Good to see you, {{ admin_name }}.</h1>
-                <p>Monitor both career journeys and keep the platform ready for its next learner.</p>
+                <p>Monitor users, product usage, and the health of the CareerPilot workspace.</p>
             </div>
-            <a class="btn btn-outline-primary" href="{{ url_for('admin.admin_logout') }}">Log out</a>
+            <div class="admin-hero-actions">
+                <a class="btn btn-primary" href="{{ url_for('admin.admin_users') }}">Manage users</a>
+                <a class="btn btn-outline-primary" href="{{ url_for('admin.admin_settings') }}">Settings</a>
+            </div>
         </div>
 
+        {% include "admin/_messages.html" %}
         {% if error %}<div class="alert alert-warning" role="alert">{{ error }}</div>{% endif %}
 
         <div class="row g-3 mb-4">
-            <div class="col-md-4"><article class="admin-stat-card"><span>Total users</span><strong>{{ stats.total_users }}</strong><small>Registered accounts</small></article></div>
-            <div class="col-md-4"><article class="admin-stat-card admin-stat-card-fresher"><span>Freshers</span><strong>{{ stats.fresher_users }}</strong><small>First-career journeys</small></article></div>
-            <div class="col-md-4"><article class="admin-stat-card admin-stat-card-experienced"><span>Working professionals</span><strong>{{ stats.experienced_users }}</strong><small>Career-switch journeys</small></article></div>
+            <div class="col-sm-6 col-xl-3"><article class="admin-stat-card"><span>Total users</span><strong>{{ stats.total_users }}</strong><small>All registered accounts</small></article></div>
+            <div class="col-sm-6 col-xl-3"><article class="admin-stat-card admin-stat-card-fresher"><span>Active users</span><strong>{{ stats.active_users }}</strong><small>{{ stats.fresher_users }} fresher - {{ stats.experienced_users }} professional</small></article></div>
+            <div class="col-sm-6 col-xl-3"><article class="admin-stat-card admin-stat-card-new"><span>New this week</span><strong>{{ stats.new_users }}</strong><small>Accounts created in 7 days</small></article></div>
+            <div class="col-sm-6 col-xl-3"><article class="admin-stat-card admin-stat-card-experienced"><span>Suspended</span><strong>{{ stats.suspended_users }}</strong><small>Accounts needing attention</small></article></div>
         </div>
 
-        <article class="card border-0 shadow-sm admin-users-card">
-            <div class="card-body p-4 p-lg-5">
-                <div class="d-flex justify-content-between align-items-start gap-3 mb-4">
-                    <div><div class="dashboard-eyebrow">User management</div><h2 class="h4 mb-1">Recently registered users</h2><p class="text-muted mb-0">The first 50 accounts are shown here for the initial admin view.</p></div>
-                    <span class="dashboard-panel-chip">Live overview</span>
-                </div>
-                {% if users %}
-                <div class="table-responsive">
-                    <table class="table align-middle admin-users-table">
-                        <thead><tr><th>Name</th><th>Email</th><th>Workspace</th><th>Joined</th></tr></thead>
-                        <tbody>
-                        {% for user in users %}
-                        <tr><td><strong>{{ user.full_name }}</strong></td><td>{{ user.email }}</td><td><span class="admin-role-badge admin-role-{{ user.profile_type|default('fresher') }}">{{ 'Working professional' if user.profile_type == 'experienced' else 'Fresher' }}</span></td><td>{{ user.created_at.strftime('%d %b %Y') if user.created_at else '—' }}</td></tr>
-                        {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-                {% else %}
-                <div class="admin-empty-state">No user accounts are available yet.</div>
-                {% endif %}
+        <div class="row g-3 mb-4">
+            <div class="col-md-6"><article class="admin-stat-card admin-stat-card-usage"><span>Resume analyses</span><strong>{{ stats.resume_analyses }}</strong><small>Total analyses saved by users</small></article></div>
+            <div class="col-md-6"><article class="admin-stat-card admin-stat-card-usage"><span>Interview sessions</span><strong>{{ stats.interviews }}</strong><small>Total interview results saved</small></article></div>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-xl-7">
+                <article class="card border-0 shadow-sm admin-users-card h-100">
+                    <div class="card-body p-4 p-lg-5">
+                        <div class="admin-panel-heading">
+                            <div><div class="dashboard-eyebrow">User management</div><h2 class="h4 mb-1">Recently registered users</h2><p class="text-muted mb-0">Open an account to review its profile and activity.</p></div>
+                            <a class="btn btn-sm btn-outline-primary" href="{{ url_for('admin.admin_users') }}">View all</a>
+                        </div>
+                        {% if users %}
+                        <div class="table-responsive">
+                            <table class="table align-middle admin-users-table">
+                                <thead><tr><th>Name</th><th>Workspace</th><th>Status</th><th>Joined</th><th></th></tr></thead>
+                                <tbody>
+                                {% for user in users %}
+                                <tr>
+                                    <td><strong>{{ user.full_name }}</strong><small class="d-block text-muted">{{ user.email }}</small></td>
+                                    <td><span class="admin-role-badge admin-role-{{ user.profile_type|default('fresher') }}">{{ 'Professional' if user.profile_type == 'experienced' else 'Fresher' }}</span></td>
+                                    <td><span class="admin-status-badge admin-status-{{ user.account_status|default('active') }}">{{ user.account_status|default('active')|capitalize }}</span></td>
+                                    <td>{{ user.created_at.strftime('%d %b %Y') if user.created_at else '-' }}</td>
+                                    <td><a class="admin-table-link" href="{{ url_for('admin.admin_user_detail', student_id=user.student_id) }}">Open</a></td>
+                                </tr>
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <div class="admin-empty-state">No user accounts are available yet.</div>
+                        {% endif %}
+                    </div>
+                </article>
             </div>
-        </article>
+
+            <div class="col-xl-5">
+                <article class="card border-0 shadow-sm admin-users-card h-100">
+                    <div class="card-body p-4 p-lg-5">
+                        <div class="admin-panel-heading"><div><div class="dashboard-eyebrow">Audit trail</div><h2 class="h4 mb-1">Recent activity</h2><p class="text-muted mb-0">Important administrator actions appear here.</p></div><a class="btn btn-sm btn-outline-primary" href="{{ url_for('admin.admin_activity') }}">View log</a></div>
+                        {% if activities %}
+                        <div class="admin-activity-list">
+                            {% for activity in activities %}
+                            <div class="admin-activity-item">
+                                <span class="admin-activity-dot"></span>
+                                <div><strong>{{ activity.action|replace('_', ' ')|title }}</strong><p>{{ activity.details or 'Activity recorded.' }}</p><small>{{ activity.created_at.strftime('%d %b %Y, %I:%M %p') if activity.created_at else 'Unknown time' }}</small></div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="admin-empty-state">No activity has been recorded yet.</div>
+                        {% endif %}
+                    </div>
+                </article>
+            </div>
+        </div>
     </div>
 </section>
 {% endblock %}

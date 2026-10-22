@@ -13,6 +13,13 @@ import pymysql
 from werkzeug.security import generate_password_hash
 
 
+def _is_password_hash(value):
+  """Return whether a configured password value has Werkzeug hash format."""
+  if not isinstance(value, str):
+    return False
+  return value.startswith(('scrypt:', 'pbkdf2:', 'argon2:', 'sha1$', 'md5$'))
+
+
 def get_db_connection():
   """Establishes and returns a new MySQL database connection."""
   return pymysql.connect(
@@ -179,6 +186,25 @@ def ensure_auth_schema(cursor):
 
   cursor.execute(
       """
+      SELECT COUNT(*) AS column_count
+      FROM information_schema.columns
+      WHERE table_schema = DATABASE()
+        AND table_name = 'students'
+        AND column_name = 'account_status'
+      """
+  )
+  account_status_column = cursor.fetchone() or {}
+  if not int(account_status_column.get('column_count') or 0):
+    cursor.execute(
+        """
+        ALTER TABLE students
+        ADD COLUMN account_status VARCHAR(20) NOT NULL DEFAULT 'active'
+        AFTER profile_type
+        """
+    )
+
+  cursor.execute(
+      """
       CREATE TABLE IF NOT EXISTS admins (
           admin_id INT NOT NULL AUTO_INCREMENT,
           full_name VARCHAR(100) NOT NULL,
@@ -188,6 +214,26 @@ def ensure_auth_schema(cursor):
           created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
           PRIMARY KEY (admin_id),
           UNIQUE KEY uq_admins_email (email)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+      """
+  )
+
+  cursor.execute(
+      """
+      CREATE TABLE IF NOT EXISTS admin_activity_logs (
+          activity_id BIGINT NOT NULL AUTO_INCREMENT,
+          admin_id INT DEFAULT NULL,
+          action VARCHAR(80) NOT NULL,
+          target_type VARCHAR(40) DEFAULT NULL,
+          target_id INT DEFAULT NULL,
+          details VARCHAR(500) DEFAULT NULL,
+          created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          PRIMARY KEY (activity_id),
+          KEY idx_admin_activity_created_at (created_at),
+          KEY idx_admin_activity_admin_id (admin_id),
+          CONSTRAINT fk_admin_activity_admin
+              FOREIGN KEY (admin_id) REFERENCES admins(admin_id)
+              ON DELETE SET NULL
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
       """
   )
@@ -254,12 +300,19 @@ def ensure_auth_schema(cursor):
           'ALTER TABLE professional_profile ADD COLUMN ' + column_name + ' ' + definition
       )
 
-  if ADMIN_EMAIL and (ADMIN_PASSWORD_HASH or ADMIN_PASSWORD):
+  configured_hash = None
+  if _is_password_hash(ADMIN_PASSWORD_HASH):
+    configured_hash = ADMIN_PASSWORD_HASH
+  elif ADMIN_PASSWORD or ADMIN_PASSWORD_HASH:
+    configured_hash = generate_password_hash(ADMIN_PASSWORD or ADMIN_PASSWORD_HASH)
+
+  if ADMIN_EMAIL and configured_hash:
     cursor.execute(
-        'SELECT admin_id FROM admins WHERE email = %s',
+        'SELECT admin_id, password FROM admins WHERE email = %s',
         (ADMIN_EMAIL,),
     )
-    if not cursor.fetchone():
+    existing_admin = cursor.fetchone()
+    if not existing_admin:
       cursor.execute(
           """
           INSERT INTO admins (full_name, email, password)
@@ -268,6 +321,11 @@ def ensure_auth_schema(cursor):
           (
               'CareerPilot Administrator',
               ADMIN_EMAIL,
-              ADMIN_PASSWORD_HASH or generate_password_hash(ADMIN_PASSWORD),
+              configured_hash,
           ),
+      )
+    elif not _is_password_hash(existing_admin.get('password')):
+      cursor.execute(
+          'UPDATE admins SET password = %s WHERE admin_id = %s',
+          (configured_hash, existing_admin['admin_id']),
       )

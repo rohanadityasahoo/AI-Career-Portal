@@ -3,7 +3,9 @@
 
 ALTER TABLE students
     ADD COLUMN IF NOT EXISTS profile_type VARCHAR(20) NOT NULL DEFAULT 'fresher'
-    AFTER password;
+    AFTER password,
+    ADD COLUMN IF NOT EXISTS account_status VARCHAR(20) NOT NULL DEFAULT 'active'
+    AFTER profile_type;
 
 CREATE TABLE IF NOT EXISTS admins (
     admin_id INT NOT NULL AUTO_INCREMENT,
@@ -14,6 +16,22 @@ CREATE TABLE IF NOT EXISTS admins (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (admin_id),
     UNIQUE KEY uq_admins_email (email)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS admin_activity_logs (
+    activity_id BIGINT NOT NULL AUTO_INCREMENT,
+    admin_id INT DEFAULT NULL,
+    action VARCHAR(80) NOT NULL,
+    target_type VARCHAR(40) DEFAULT NULL,
+    target_id INT DEFAULT NULL,
+    details VARCHAR(500) DEFAULT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (activity_id),
+    KEY idx_admin_activity_created_at (created_at),
+    KEY idx_admin_activity_admin_id (admin_id),
+    CONSTRAINT fk_admin_activity_admin
+        FOREIGN KEY (admin_id) REFERENCES admins(admin_id)
+        ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 

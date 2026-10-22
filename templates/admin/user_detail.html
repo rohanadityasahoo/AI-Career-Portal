@@ -1,0 +1,68 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}User Details | Admin | CareerPilot AI{% endblock %}
+
+{% block content %}
+<section class="admin-dashboard-page py-4 py-lg-5">
+    <div class="container">
+        {% include "admin/_messages.html" %}
+        {% if error %}<div class="alert alert-warning" role="alert">{{ error }}</div>{% endif %}
+        {% if user %}
+        <div class="admin-page-heading">
+            <div><a class="admin-back-link" href="{{ url_for('admin.admin_users') }}">&larr; Back to users</a><span class="dashboard-eyebrow">User profile</span><h1>{{ user.full_name }}</h1><p>{{ user.email }} - Joined {{ user.created_at.strftime('%d %b %Y') if user.created_at else 'date unavailable' }}</p></div>
+            <span class="admin-status-badge admin-status-{{ user.account_status|default('active') }}">{{ user.account_status|default('active')|capitalize }}</span>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-lg-7">
+                <article class="card border-0 shadow-sm admin-users-card mb-4">
+                    <div class="card-body p-4 p-lg-5">
+                        <div class="dashboard-eyebrow">Account details</div>
+                        <div class="admin-detail-grid">
+                            <div><small>Full name</small><strong>{{ user.full_name }}</strong></div>
+                            <div><small>Email</small><strong>{{ user.email }}</strong></div>
+                            <div><small>Phone</small><strong>{{ user.phone }}</strong></div>
+                            <div><small>Workspace</small><strong>{{ 'Working professional' if user.profile_type == 'experienced' else 'Fresher' }}</strong></div>
+                            <div><small>Gender</small><strong>{{ user.gender or 'Not provided' }}</strong></div>
+                            <div><small>Education</small><strong>{{ user.college or 'Not provided' }}</strong></div>
+                            <div><small>Branch</small><strong>{{ user.branch or 'Not provided' }}</strong></div>
+                            <div><small>Year</small><strong>{{ user.year or 'Not provided' }}</strong></div>
+                        </div>
+                    </div>
+                </article>
+
+                <article class="card border-0 shadow-sm admin-users-card">
+                    <div class="card-body p-4 p-lg-5">
+                        <div class="dashboard-eyebrow">Audit trail</div><h2 class="h4 mb-1">Activity for this account</h2><p class="text-muted">Administrator actions affecting this user.</p>
+                        {% if recent_activity %}
+                        <div class="admin-activity-list">
+                            {% for activity in recent_activity %}
+                            <div class="admin-activity-item"><span class="admin-activity-dot"></span><div><strong>{{ activity.action|replace('_', ' ')|title }}</strong><p>{{ activity.details or 'Activity recorded.' }}</p><small>{{ activity.created_at.strftime('%d %b %Y, %I:%M %p') if activity.created_at else 'Unknown time' }}</small></div></div>
+                            {% endfor %}
+                        </div>
+                        {% else %}<div class="admin-empty-state">No administrator actions have been recorded for this account.</div>{% endif %}
+                    </div>
+                </article>
+            </div>
+
+            <div class="col-lg-5">
+                <article class="card border-0 shadow-sm admin-users-card mb-4">
+                    <div class="card-body p-4 p-lg-5">
+                        <div class="dashboard-eyebrow">Product usage</div><h2 class="h4 mb-3">Career activity</h2>
+                        <div class="admin-usage-grid"><div><strong>{{ usage.resume_count }}</strong><span>Resume analyses</span></div><div><strong>{{ usage.interview_count }}</strong><span>Interview sessions</span></div></div>
+                    </div>
+                </article>
+                <article class="card border-0 shadow-sm admin-users-card">
+                    <div class="card-body p-4 p-lg-5">
+                        <div class="dashboard-eyebrow">Account control</div><h2 class="h4 mb-2">Access status</h2><p class="text-muted">Suspended users cannot sign in until access is restored.</p>
+                        <form method="POST" action="{{ url_for('admin.update_user_status', student_id=user.student_id) }}">
+                            {% if user.account_status == 'suspended' %}<input type="hidden" name="account_status" value="active"><button class="btn btn-success w-100" type="submit">Reactivate account</button>{% else %}<input type="hidden" name="account_status" value="suspended"><button class="btn btn-outline-danger w-100" type="submit">Suspend account</button>{% endif %}
+                        </form>
+                    </div>
+                </article>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

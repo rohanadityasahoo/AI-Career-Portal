@@ -203,7 +203,12 @@ def login():
         ensure_auth_schema(cursor)
         conn.commit()
         cursor.execute(
-            'SELECT student_id, full_name, password, profile_type FROM students WHERE email = %s',
+            """
+            SELECT student_id, full_name, password, profile_type,
+                   COALESCE(account_status, 'active') AS account_status
+            FROM students
+            WHERE email = %s
+            """,
             (email,),
         )
         student = cursor.fetchone()
@@ -222,6 +227,16 @@ def login():
         conn.close()
 
     if student and check_password_hash(student['password'], password):
+      if student.get('account_status') == 'suspended':
+        return (
+            render_template(
+                'auth/login.html',
+                error='This account is currently suspended. Please contact support.',
+                email=email,
+                profile_type=_profile_type(student.get('profile_type')),
+            ),
+            403,
+        )
       account_profile_type = _profile_type(student.get('profile_type'))
       if selected_profile_type != account_profile_type:
         return (
