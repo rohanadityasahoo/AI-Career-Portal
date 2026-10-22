@@ -259,9 +259,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
 document.addEventListener("DOMContentLoaded", () => {
     const loginForm = document.querySelector("[data-login-form]");
-    const passwordToggle = document.querySelector("[data-password-toggle]");
-    const passwordField = document.querySelector("#password");
-    const loginSubmit = document.querySelector("[data-login-submit]");
+    const passwordToggle = loginForm?.querySelector("[data-password-toggle]");
+    const passwordField = passwordToggle
+        ? document.getElementById(passwordToggle.getAttribute("aria-controls"))
+        : loginForm?.querySelector('input[type="password"]');
+    const loginSubmit = loginForm?.querySelector("[data-login-submit]");
 
     if (!loginForm || !passwordField) {
         return;

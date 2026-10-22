@@ -29,7 +29,7 @@
                         <div class="alert alert-danger auth-login-alert" role="alert">{{ error }}</div>
                         {% endif %}
 
-                        <form method="POST">
+                        <form method="POST" data-login-form>
                             <div class="auth-login-field">
                                 <label for="admin-email">Admin email</label>
                                 <input id="admin-email" type="email" name="email" class="form-control" value="{{ email|default('') }}" autocomplete="username" required autofocus placeholder="admin@example.com">
