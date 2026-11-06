@@ -60,6 +60,8 @@ def file_too_large_error(error):
   return (
       render_template(
           "resume/upload.html",
+          profile_type="fresher",
+          tool_mode=False,
           error="The uploaded file is too large. Maximum allowed size is 16 MB.",
       ),
       413,

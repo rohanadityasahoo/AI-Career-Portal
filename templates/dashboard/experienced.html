@@ -24,14 +24,14 @@
             </div>
             <div class="col-6 col-xl">
                 <article class="dashboard-stat-card h-100">
-                    <span class="dashboard-stat-label">Resume review</span>
+                    <span class="dashboard-stat-label">Resume Coach</span>
                     <strong class="dashboard-stat-value">{{ progress.resume.count }}</strong>
                     {% if progress.resume.latest_score is not none %}
                     <span class="dashboard-stat-caption">Latest signal: {{ progress.resume.latest_score }}/100</span>
                     {% else %}
-                    <span class="dashboard-stat-caption">No review yet</span>
+                    <span class="dashboard-stat-caption">No coaching session yet</span>
                     {% endif %}
-                    <a href="{{ url_for('resume.resume_home') }}">Review resume <span aria-hidden="true">→</span></a>
+                    <a href="{{ url_for('resume.resume_home') }}">Open Resume Coach <span aria-hidden="true">→</span></a>
                 </article>
             </div>
             <div class="col-6 col-xl">

@@ -68,7 +68,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const dropzone = resumeInput.previousElementSibling;
 
             if (!selectedFile) {
-                fileName.textContent = "PDF only · maximum 16 MB";
+                fileName.textContent = "PDF only · maximum 16 MB · selectable text recommended";
                 dropzone?.classList.remove("is-file-selected");
                 return;
             }
@@ -441,4 +441,156 @@ document.addEventListener("DOMContentLoaded", () => {
             label.textContent = "Saving profile…";
         }
     });
+});
+
+document.addEventListener("DOMContentLoaded", () => {
+    let resumePhotoData = "";
+    const photoInput = document.querySelector("[data-resume-photo-input]");
+    const photoPreview = document.querySelector("[data-resume-photo-preview]");
+    const photoPreviewWrap = document.querySelector("[data-resume-photo-preview-wrap]");
+    const photoRemoveButton = document.querySelector("[data-remove-resume-photo]");
+    const photoStatus = document.querySelector("[data-resume-photo-status]");
+
+    photoInput?.addEventListener("change", () => {
+        const file = photoInput.files?.[0];
+        if (!file) {
+            return;
+        }
+        if (!["image/jpeg", "image/png"].includes(file.type)) {
+            photoInput.value = "";
+            if (photoStatus) photoStatus.textContent = "Choose a JPG or PNG image.";
+            return;
+        }
+        if (file.size > 5 * 1024 * 1024) {
+            photoInput.value = "";
+            if (photoStatus) photoStatus.textContent = "Choose an image smaller than 5 MB.";
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.addEventListener("load", () => {
+            const image = new Image();
+            image.addEventListener("load", () => {
+                const size = 480;
+                const scale = Math.max(size / image.naturalWidth, size / image.naturalHeight);
+                const canvas = document.createElement("canvas");
+                canvas.width = size;
+                canvas.height = size;
+                const context = canvas.getContext("2d");
+                const width = image.naturalWidth * scale;
+                const height = image.naturalHeight * scale;
+                context.drawImage(image, (size - width) / 2, (size - height) / 2, width, height);
+                resumePhotoData = canvas.toDataURL("image/jpeg", 0.88);
+                if (photoPreview) photoPreview.src = resumePhotoData;
+                if (photoPreviewWrap) photoPreviewWrap.hidden = false;
+                if (photoRemoveButton) photoRemoveButton.hidden = false;
+                if (photoStatus) photoStatus.textContent = "Photo added to the resume header.";
+            });
+            image.addEventListener("error", () => {
+                photoInput.value = "";
+                if (photoStatus) photoStatus.textContent = "The selected image could not be read.";
+            });
+            image.src = reader.result;
+        });
+        reader.readAsDataURL(file);
+    });
+
+    photoRemoveButton?.addEventListener("click", () => {
+        resumePhotoData = "";
+        if (photoInput) photoInput.value = "";
+        if (photoPreview) photoPreview.src = "";
+        if (photoPreviewWrap) photoPreviewWrap.hidden = true;
+        photoRemoveButton.hidden = true;
+        if (photoStatus) photoStatus.textContent = "Photo removed from the resume.";
+    });
+
+    document.querySelectorAll("[data-copy-target]").forEach((button) => {
+        button.addEventListener("click", async () => {
+            const target = document.getElementById(button.dataset.copyTarget);
+            if (!target) {
+                return;
+            }
+
+            const text = "value" in target ? target.value : target.textContent;
+            try {
+                await navigator.clipboard.writeText(text);
+            } catch (error) {
+                target.focus();
+                target.select?.();
+                document.execCommand("copy");
+            }
+
+            const originalLabel = button.textContent;
+            button.textContent = "Copied";
+            window.setTimeout(() => {
+                button.textContent = originalLabel;
+            }, 1400);
+        });
+    });
+
+    document.querySelectorAll("[data-remove-target]").forEach((button) => {
+        button.addEventListener("click", () => {
+            const card = document.getElementById(button.dataset.removeTarget);
+            const preview = document.querySelector(
+                `[data-resume-preview-section="${button.dataset.removePreview}"]`,
+            );
+            card?.remove();
+            preview?.remove();
+        });
+    });
+
+    document.querySelectorAll("[data-download-resume]").forEach((button) => {
+        button.addEventListener("click", async () => {
+            const status = document.querySelector("[data-resume-download-status]");
+            const draft = {};
+            document.querySelectorAll("[data-resume-field]").forEach((field) => {
+                draft[field.dataset.resumeField] = field.value;
+            });
+            const template = document.querySelector("[data-resume-template]:checked")?.value || "modern";
+
+            const originalLabel = button.textContent;
+            button.disabled = true;
+            button.textContent = "Generating...";
+            if (status) {
+                status.textContent = "Preparing your edited resume...";
+                status.classList.remove("is-error");
+            }
+
+            try {
+                const response = await fetch(button.dataset.downloadUrl, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ draft, template, photo: resumePhotoData || null }),
+                });
+                if (!response.ok) {
+                    const error = await response.json().catch(() => ({}));
+                    throw new Error(error.error || "The resume file could not be generated.");
+                }
+
+                const blob = await response.blob();
+                const downloadUrl = URL.createObjectURL(blob);
+                const link = document.createElement("a");
+                link.href = downloadUrl;
+                link.download = button.dataset.downloadResume === "pdf"
+                    ? "CareerPilot_Resume.pdf"
+                    : "CareerPilot_Resume.docx";
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                URL.revokeObjectURL(downloadUrl);
+                if (status) {
+                    status.textContent = "Your file is ready and downloading.";
+                }
+            } catch (error) {
+                if (status) {
+                    status.textContent = error.message;
+                    status.classList.add("is-error");
+                }
+            } finally {
+                button.disabled = false;
+                button.textContent = originalLabel;
+            }
+        });
+    });
+
 });

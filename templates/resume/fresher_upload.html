@@ -1,0 +1,93 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Fresher Resume Coach | CareerPilot AI{% endblock %}
+
+{% block content %}
+<div class="resume-upload-page resume-upload-fresher">
+    <div class="container py-5">
+        <div class="resume-upload-hero">
+            <div class="resume-eyebrow">Fresher Resume Coach</div>
+            <div class="row align-items-end g-3">
+                <div class="col-lg-8">
+                    <h1>{{ 'Coach your resume for the role you want.' if tool_mode|default(false) else 'Build your first-job resume package.' }}</h1>
+                    <p class="mb-0">{{ 'Compare your projects, skills, and learning evidence with the role you want next.' if tool_mode|default(false) else 'Upload once to get a resume diagnosis, editable resume draft, application messages, and a focused job-search plan.' }}</p>
+                </div>
+                <div class="col-lg-4">
+                    <div class="resume-privacy-note">
+                        <strong>Privacy-first upload</strong>
+                        <span>Your source PDF is deleted after text is read.</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4 mt-1 align-items-start">
+            <div class="col-lg-8">
+                <section class="card resume-form-card shadow-sm border-0">
+                    <div class="card-body p-4 p-md-5">
+                        <div class="d-flex align-items-start gap-3 mb-4">
+                            <div class="resume-step-number">1</div>
+                            <div>
+                                <h2 class="h4 mb-1">Start your Resume Coach package</h2>
+                                <p class="text-muted mb-0">Add your target role and upload a readable PDF. Resume Coach will prepare the complete next-step package in one result.</p>
+                            </div>
+                        </div>
+
+                        {% if error %}
+                        <div class="alert alert-danger" role="alert">{{ error }}</div>
+                        {% endif %}
+
+                        <form method="POST" enctype="multipart/form-data" data-resume-form>
+                            {% if tool_mode|default(false) %}<input type="hidden" name="mode" value="tailor">{% endif %}
+                            <div class="mb-4">
+                                <label for="resume" class="form-label fw-semibold">Upload resume PDF <span class="text-danger">*</span></label>
+                                <label class="resume-dropzone" for="resume">
+                                    <span class="resume-dropzone-icon" aria-hidden="true">&uarr;</span>
+                                    <span class="resume-dropzone-title">Choose a text-based PDF</span>
+                                    <span class="resume-dropzone-copy" id="resume-file-name">PDF only &middot; maximum 16 MB &middot; selectable text recommended</span>
+                                </label>
+                                <input class="visually-hidden" type="file" id="resume" name="resume" accept="application/pdf,.pdf" required data-resume-file>
+                            </div>
+
+                            <div class="row g-3">
+                                <div class="col-md-5">
+                                    <label for="target_role" class="form-label fw-semibold">Target job role <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="target_role" name="target_role" maxlength="120" placeholder="e.g. Data Analyst or Software Developer" value="{{ target_role|default('', true) }}" required>
+                                    <div class="form-text">Required to make your resume, messages, and action plan role-specific.</div>
+                                </div>
+                                <div class="col-md-7">
+                                    <label for="job_description" class="form-label fw-semibold">Job description <span class="text-muted fw-normal">(optional)</span></label>
+                                    <textarea class="form-control" id="job_description" name="job_description" rows="3" maxlength="8000" placeholder="Paste a job post to compare visible skills.">{{ job_description|default('', true) }}</textarea>
+                                    <div class="form-text">Adds keyword alignment to your package. This is not a hiring prediction.</div>
+                                </div>
+                            </div>
+
+                            <div class="resume-form-footer mt-4">
+                                <p class="small text-muted mb-0">One upload gives you the review, editable resume draft, cover letter, recruiter message, LinkedIn copy, and 30-day plan. Keep every claim truthful.</p>
+                                <button type="submit" class="btn btn-primary resume-submit" data-resume-submit>
+                                    <span>Build my resume package</span>
+                                    <span aria-hidden="true">&rarr;</span>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </section>
+            </div>
+
+            <aside class="col-lg-4">
+                <section class="resume-info-card">
+                    <div class="resume-step-number">2</div>
+                    <h2 class="h5 mt-3">Your fresher package includes</h2>
+                    <ul class="resume-feature-list">
+                        <li><span>&#10003;</span> Resume score and missing-section checklist</li>
+                        <li><span>&#10003;</span> Editable AI resume draft</li>
+                        <li><span>&#10003;</span> Cover letter and recruiter message</li>
+                        <li><span>&#10003;</span> LinkedIn copy and 30-day job plan</li>
+                    </ul>
+                </section>
+                <a href="{{ url_for('resume.resume_history') }}" class="btn btn-outline-primary w-100 mt-3">View coaching history</a>
+            </aside>
+        </div>
+    </div>
+</div>
+{% endblock %}

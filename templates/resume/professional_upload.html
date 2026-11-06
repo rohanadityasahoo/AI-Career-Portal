@@ -1,0 +1,93 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Working Professional Resume Coach | CareerPilot AI{% endblock %}
+
+{% block content %}
+<div class="resume-upload-page resume-upload-professional">
+    <div class="container py-5">
+        <div class="resume-upload-hero">
+            <div class="resume-eyebrow">Working Professional Resume Coach</div>
+            <div class="row align-items-end g-3">
+                <div class="col-lg-8">
+                    <h1>{{ 'Coach your resume for the next role.' if tool_mode|default(false) else 'Show the impact behind your experience.' }}</h1>
+                    <p class="mb-0">{{ 'Compare your professional experience with a target role and find the impact evidence to strengthen before applying.' if tool_mode|default(false) else 'Upload once to strengthen measurable outcomes, ownership, progression, and evidence for your next move.' }}</p>
+                </div>
+                <div class="col-lg-4">
+                    <div class="resume-privacy-note">
+                        <strong>Privacy-first upload</strong>
+                        <span>Your source PDF is deleted after text is read.</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4 mt-1 align-items-start">
+            <div class="col-lg-8">
+                <section class="card resume-form-card shadow-sm border-0">
+                    <div class="card-body p-4 p-md-5">
+                        <div class="d-flex align-items-start gap-3 mb-4">
+                            <div class="resume-step-number">1</div>
+                            <div>
+                                <h2 class="h4 mb-1">{{ 'Upload your resume for coaching' if tool_mode|default(false) else 'Upload your professional resume' }}</h2>
+                                <p class="text-muted mb-0">Focus the coaching on ownership, measurable outcomes, and the role or field you want to move into.</p>
+                            </div>
+                        </div>
+
+                        {% if error %}
+                        <div class="alert alert-danger" role="alert">{{ error }}</div>
+                        {% endif %}
+
+                        <form method="POST" enctype="multipart/form-data" data-resume-form>
+                            {% if tool_mode|default(false) %}<input type="hidden" name="mode" value="tailor">{% endif %}
+                            <div class="mb-4">
+                                <label for="resume" class="form-label fw-semibold">Upload resume PDF <span class="text-danger">*</span></label>
+                                <label class="resume-dropzone" for="resume">
+                                    <span class="resume-dropzone-icon" aria-hidden="true">&uarr;</span>
+                                    <span class="resume-dropzone-title">Choose a text-based PDF</span>
+                                    <span class="resume-dropzone-copy" id="resume-file-name">PDF only &middot; maximum 16 MB &middot; selectable text recommended</span>
+                                </label>
+                                <input class="visually-hidden" type="file" id="resume" name="resume" accept="application/pdf,.pdf" required data-resume-file>
+                            </div>
+
+                            <div class="row g-3">
+                                <div class="col-md-5">
+                                    <label for="target_role" class="form-label fw-semibold">Target job role <span class="text-muted fw-normal">(optional)</span></label>
+                                    <input type="text" class="form-control" id="target_role" name="target_role" maxlength="120" placeholder="e.g. Senior Data Analyst or Product Manager" value="{{ target_role|default('', true) }}">
+                                    <div class="form-text">Used to focus impact and career-switch coaching.</div>
+                                </div>
+                                <div class="col-md-7">
+                                    <label for="job_description" class="form-label fw-semibold">Job description <span class="text-muted fw-normal">(optional)</span></label>
+                                    <textarea class="form-control" id="job_description" name="job_description" rows="3" maxlength="8000" placeholder="Paste a job post to compare visible skills.">{{ job_description|default('', true) }}</textarea>
+                                    <div class="form-text">Adds keyword alignment and target-role evidence. This is not a hiring prediction.</div>
+                                </div>
+                            </div>
+
+                            <div class="resume-form-footer mt-4">
+                                <p class="small text-muted mb-0">You will get impact signals, role alignment, an editable AI resume draft, and practical next steps. Keep every claim truthful.</p>
+                                <button type="submit" class="btn btn-primary resume-submit" data-resume-submit>
+                                    <span>{{ 'Coach my resume' if tool_mode|default(false) else 'Analyze my resume' }}</span>
+                                    <span aria-hidden="true">&rarr;</span>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </section>
+            </div>
+
+            <aside class="col-lg-4">
+                <section class="resume-info-card">
+                    <div class="resume-step-number">2</div>
+                    <h2 class="h5 mt-3">Your professional coaching includes</h2>
+                    <ul class="resume-feature-list">
+                        <li><span>&#10003;</span> Impact, ownership, and progression coaching</li>
+                        <li><span>&#10003;</span> ATS-readiness and content signals</li>
+                        <li><span>&#10003;</span> Target-role skill alignment</li>
+                        <li><span>&#10003;</span> Editable AI resume draft with PDF/Word export</li>
+                    </ul>
+                </section>
+                <a href="{{ url_for('resume.resume_history') }}" class="btn btn-outline-primary w-100 mt-3">View coaching history</a>
+            </aside>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,15 +1,34 @@
 import os
 import uuid
+from io import BytesIO
 
-from ai_modules.career_ai import analyze_resume
+from ai_modules.career_ai import analyze_resume, generate_resume_draft
+from ai_modules.resume_documents import (
+    build_resume_docx,
+    build_resume_pdf,
+    normalize_resume_draft,
+    normalize_resume_photo,
+    normalize_resume_template,
+)
 from ai_modules.resume_analyzer import extract_resume_text
+from ai_modules.resume_parser import parse_resume_text
+from ai_modules.resume_package import build_fresher_resume_package
 from ai_modules.usage import ai_feature_context
 from database.db import (
     ensure_auth_schema,
     ensure_resume_analysis_schema,
     get_db_connection,
 )
-from flask import Blueprint, current_app, redirect, render_template, request, session
+from flask import (
+    Blueprint,
+    current_app,
+    jsonify,
+    redirect,
+    render_template,
+    request,
+    send_file,
+    session,
+)
 from werkzeug.utils import secure_filename
 
 resume = Blueprint('resume', __name__)
@@ -46,12 +65,25 @@ def _student_profile_type():
   return 'experienced' if row.get('profile_type') == 'experienced' else 'fresher'
 
 
-def _upload_page(profile_type, tool_mode, error=None):
+def _upload_page(
+    profile_type,
+    tool_mode,
+    error=None,
+    target_role='',
+    job_description='',
+):
+  template_name = (
+      'resume/professional_upload.html'
+      if profile_type == 'experienced'
+      else 'resume/fresher_upload.html'
+  )
   return render_template(
-      'resume/upload.html',
+      template_name,
       profile_type=profile_type,
       tool_mode=tool_mode,
       error=error,
+      target_role=target_role,
+      job_description=job_description,
   )
 
 
@@ -92,6 +124,15 @@ def resume_home():
         request.form.get('job_description'), 8000
     )
 
+    if profile_type == 'fresher' and not target_role:
+      return _upload_page(
+          profile_type,
+          tool_mode,
+          'Enter the job role you are targeting so Resume Coach can build a focused package.',
+          target_role,
+          job_description,
+      ), 400
+
     safe_name = secure_filename(file.filename) or 'resume.pdf'
     unique_filename = (
         f"student_{session['student_id']}_{uuid.uuid4().hex[:8]}_{safe_name}"
@@ -123,12 +164,14 @@ def resume_home():
           'Could not extract readable text from this PDF.',
       ), 400
 
+    parsed_resume = parse_resume_text(resume_text)
     with ai_feature_context('resume_analyzer', session.get('student_id')):
       ai_feedback = analyze_resume(
           resume_text,
           target_role=target_role,
           job_description=job_description,
           profile_type=profile_type,
+          parsed_resume=parsed_resume,
       )
     if not ai_feedback:
       return _upload_page(
@@ -136,6 +179,18 @@ def resume_home():
           tool_mode,
           'We could not analyze the readable text in this PDF. Please try another file.',
       ), 503
+
+    with ai_feature_context('resume_writer', session.get('student_id')):
+      resume_draft, writer_ai_assisted = generate_resume_draft(
+          parsed_resume,
+          target_role=target_role,
+          job_description=job_description,
+          profile_type=profile_type,
+          resume_text=resume_text,
+          feedback=ai_feedback,
+      )
+    ai_feedback['resume_draft'] = resume_draft
+    ai_feedback['resume_writer_assisted'] = writer_ai_assisted
 
     missing_skills = ai_feedback.get('skill_gaps', [])
     detected_skills = ai_feedback.get('detected_skills', [])
@@ -184,14 +239,68 @@ def resume_home():
       if conn:
         conn.close()
 
+    result_template = (
+        'resume/professional_result.html'
+        if profile_type == 'experienced'
+        else 'resume/fresher_result.html'
+    )
     return render_template(
-        'resume/result.html',
+        result_template,
         ai_feedback=ai_feedback,
         history_saved=history_saved,
         profile_type=profile_type,
+        resume_package=(
+            build_fresher_resume_package(
+                ai_feedback,
+                target_role,
+                resume_text,
+                parsed_resume,
+            )
+            if profile_type == 'fresher'
+            else None
+        ),
     )
 
   return _upload_page(profile_type, tool_mode)
+
+
+@resume.route('/resume/generate/<file_format>', methods=['POST'])
+def generate_resume_document(file_format):
+  """Download the currently edited fresher resume as PDF or Word."""
+  if 'student_id' not in session:
+    return jsonify({'error': 'Your session has expired. Please sign in again.'}), 401
+
+  if file_format not in {'pdf', 'word'}:
+    return jsonify({'error': 'Unsupported resume format.'}), 400
+
+  payload = request.get_json(silent=True) or {}
+  draft = normalize_resume_draft(payload.get('draft', {}))
+  try:
+    photo_bytes = normalize_resume_photo(payload.get('photo'))
+  except ValueError as error:
+    return jsonify({'error': str(error)}), 400
+  template_key = normalize_resume_template(payload.get('template', 'modern'))
+  if not draft.get('name'):
+    return jsonify({'error': 'Add your full name before generating the resume.'}), 400
+
+  if file_format == 'pdf':
+    document = build_resume_pdf(draft, template_key, photo_bytes)
+    return send_file(
+        BytesIO(document),
+        mimetype='application/pdf',
+        as_attachment=True,
+        download_name='CareerPilot_Resume.pdf',
+    )
+
+  document = build_resume_docx(draft, template_key, photo_bytes)
+  return send_file(
+      BytesIO(document),
+      mimetype=(
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+      ),
+      as_attachment=True,
+      download_name='CareerPilot_Resume.docx',
+  )
 
 
 @resume.route('/resume/history')

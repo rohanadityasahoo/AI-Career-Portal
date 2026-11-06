@@ -15,6 +15,7 @@ from werkzeug.security import generate_password_hash
 
 AI_FEATURE_DEFINITIONS = (
   ('resume_analyzer', 'Resume analyzer'),
+  ('resume_writer', 'AI resume writer'),
   ('dashboard_insights', 'Dashboard insights'),
   ('career_chatbot', 'Career chatbot'),
   ('interview_questions', 'Interview question generator'),

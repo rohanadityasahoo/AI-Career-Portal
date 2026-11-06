@@ -51,7 +51,7 @@ def _action_links():
       },
       'resume': {
           'url': url_for('resume.resume_home'),
-          'label': 'Review resume',
+          'label': 'Open Resume Coach',
       },
       'interview': {
           'url': url_for('interview.interview_home'),
@@ -213,7 +213,7 @@ def _dashboard_snapshot(student_id):
   profile_complete = sum(bool(item) for item in profile_fields) >= 3
   milestones = [
       {'label': 'Profile completed', 'complete': profile_complete, 'action_key': 'profile'},
-      {'label': 'Resume reviewed', 'complete': bool(resume_count), 'action_key': 'resume'},
+      {'label': 'Resume coaching completed', 'complete': bool(resume_count), 'action_key': 'resume'},
       {'label': 'Interview practised', 'complete': bool(interview_count), 'action_key': 'interview'},
       {'label': 'Roadmap saved', 'complete': bool(roadmap_count), 'action_key': 'roadmap'},
   ]
@@ -224,11 +224,11 @@ def _dashboard_snapshot(student_id):
   activities = []
   if latest_resume.get('created_at'):
     activities.append({
-        'title': 'Resume review completed',
+        'title': 'Resume coaching completed',
         'detail': 'Latest readiness signal: ' + (
             f"{_score(latest_resume.get('ats_score'))}/100"
             if _score(latest_resume.get('ats_score')) is not None
-            else 'available in your resume review'
+            else 'available in Resume Coach'
         ),
         'date': _format_date(latest_resume.get('created_at')),
         'action_key': 'resume',

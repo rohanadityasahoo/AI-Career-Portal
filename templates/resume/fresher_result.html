@@ -1,0 +1,293 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Resume Coach | CareerPilot AI{% endblock %}
+
+{% block content %}
+<div class="resume-results-page resume-results-fresher">
+    <div class="container py-5">
+        {% if ai_feedback %}
+        <header class="resume-results-header">
+            <div>
+                <div class="resume-eyebrow">{{ ai_feedback.review_basis }}</div>
+                <h1>Your fresher readiness review.</h1>
+                <p class="mb-0">This review focuses on education, projects, practical skills, and evidence for your first or early-career opportunity.</p>
+            </div>
+            <div class="d-flex flex-wrap gap-2">
+                {% if ai_feedback.ai_assisted %}
+                <span class="resume-status-badge">AI editorial review included</span>
+                {% else %}
+                <span class="resume-status-badge resume-status-local">Evidence-based review</span>
+                {% endif %}
+                <a href="{{ url_for('resume.resume_home') }}" class="btn btn-light">Analyze another</a>
+            </div>
+        </header>
+
+        {% if not history_saved %}
+        <div class="alert alert-warning mt-4 mb-0">Your review is ready, but we could not save it to your history right now.</div>
+        {% endif %}
+
+        <section class="row g-4 mt-1">
+            <div class="col-lg-4">
+                <div class="resume-score-panel h-100">
+                    <span class="resume-score-label">Overall entry-level readiness</span>
+                    <div class="resume-score-orb" aria-label="Overall readiness score {{ ai_feedback.overall_score }} out of 100">
+                        <strong>{{ ai_feedback.overall_score }}</strong><span>/100</span>
+                    </div>
+                    <p class="small mb-0">Weighted diagnostic based on project evidence, education, scannability, practical content, and visible skills—not a hiring prediction.</p>
+                </div>
+            </div>
+            <div class="col-lg-8">
+                <div class="card border-0 shadow-sm h-100 resume-summary-card">
+                    <div class="card-body p-4 p-lg-5">
+                        <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+                            <div>
+                                <div class="resume-section-kicker">Editorial summary</div>
+                                <h2 class="h4 mb-0">{{ 'Where your professional story needs proof' if profile_type == 'experienced' or ai_feedback.profile_type == 'experienced' else 'Where your potential needs proof' }}</h2>
+                            </div>
+                            <span class="resume-detail-count">{{ ai_feedback.facts.word_count }} words read</span>
+                        </div>
+                        <p class="resume-summary-copy mb-0">{{ ai_feedback.summary }}</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        {% if resume_package %}
+        <section class="resume-package-shell mt-5" id="resume-package">
+            <header class="resume-package-header">
+                <div>
+                    <div class="resume-package-eyebrow">Your all-in-one fresher package</div>
+                    <h2>Everything you need to improve, present, and apply.</h2>
+                    <p class="mb-0">Use this page as your resume workspace. The draft uses placeholders wherever only you can supply the truth.</p>
+                </div>
+            </header>
+
+            <nav class="resume-package-nav" aria-label="Resume package sections">
+                <a href="#resume-package-review">Review</a>
+                <a href="#resume-package-draft">Resume draft</a>
+                <a href="#resume-package-application">Application kit</a>
+                <a href="#resume-package-plan">30-day plan</a>
+            </nav>
+
+            <div class="resume-package-status-grid">
+                <article class="resume-package-status-card resume-package-status-{{ resume_package.readiness.tone }}">
+                    <span>Current status</span>
+                    <strong>{{ resume_package.readiness.label }}</strong>
+                    <p>{{ resume_package.readiness.message }}</p>
+                </article>
+                <article class="resume-package-status-card">
+                    <span>Target direction</span>
+                    <strong>{{ resume_package.role }}</strong>
+                    <p>Use this direction to tailor the resume and applications.</p>
+                </article>
+                <article class="resume-package-status-card">
+                    <span>Truth rule</span>
+                    <strong>No invented claims</strong>
+                    <p>Replace bracketed text with facts, links, numbers, and outcomes you can verify.</p>
+                </article>
+            </div>
+
+            <section class="resume-package-ats-bar" aria-label="ATS optimization details">
+                <div class="resume-package-ats-copy">
+                    <div class="resume-package-eyebrow">AI ATS scorecard</div>
+                    <div class="resume-package-ats-score"><strong>{{ ai_feedback.ats_score }}</strong><span>/100 ATS score</span></div>
+                    <h3>{{ resume_package.ats_optimization.title }}</h3>
+                    <p>{% if ai_feedback.ai_assisted %}AI editorial feedback is included with this evidence-based ATS estimate.{% else %}Evidence-based ATS estimate is available; AI editorial feedback was not returned for this review.{% endif %}</p>
+                    <small class="resume-package-ats-note">{{ resume_package.ats_optimization.note }}</small>
+                    <div class="resume-package-ats-metrics">
+                        <span><strong>{{ ai_feedback.scores['Section coverage'] }}</strong> section coverage</span>
+                        <span><strong>{{ ai_feedback.scores['Skill visibility'] }}</strong> keyword visibility</span>
+                        <span><strong>{{ ai_feedback.facts.bullet_count }}</strong> bullets found</span>
+                        {% if ai_feedback.job_alignment and ai_feedback.job_alignment.available %}
+                        <span><strong>{{ ai_feedback.job_alignment.score }}%</strong> job match</span>
+                        {% else %}
+                        <span><strong>-</strong> add a job description for match</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <ul>
+                    {% for check in resume_package.ats_optimization.checks %}<li><span aria-hidden="true">✓</span>{{ check }}</li>{% endfor %}
+                    <li><span aria-hidden="true">{% if ai_feedback.facts.has_email %}OK{% else %}!{% endif %}</span>Email {% if ai_feedback.facts.has_email %}detected{% else %}missing{% endif %}</li>
+                    <li><span aria-hidden="true">{% if ai_feedback.facts.has_phone %}OK{% else %}!{% endif %}</span>Phone {% if ai_feedback.facts.has_phone %}detected{% else %}missing{% endif %}</li>
+                    <li><span aria-hidden="true">{% if ai_feedback.facts.has_link %}OK{% else %}!{% endif %}</span>LinkedIn, GitHub, or portfolio link {% if ai_feedback.facts.has_link %}detected{% else %}missing{% endif %}</li>
+                </ul>
+            </section>
+
+            <section class="resume-package-panel" id="resume-package-review">
+                <div class="resume-package-panel-heading">
+                    <div>
+                        <div class="resume-package-eyebrow">01 / Review before editing</div>
+                        <h3>Know what to fix first.</h3>
+                    </div>
+                    <span class="resume-package-score-chip">{{ ai_feedback.overall_score }}/100 diagnostic</span>
+                </div>
+                <div class="row g-4">
+                    <div class="col-lg-6">
+                        <h4>Must fix before applying</h4>
+                        {% if resume_package.must_fix %}
+                        <div class="resume-package-list">
+                            {% for item in resume_package.must_fix %}
+                            <article>
+                                <span class="resume-package-list-number">0{{ loop.index }}</span>
+                                <div><strong>{{ item.title }}</strong><p>{{ item.body }}</p></div>
+                            </article>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <p class="resume-package-empty">No major sections are missing. Focus on the highest-impact actions below.</p>
+                        {% endif %}
+                    </div>
+                    <div class="col-lg-6">
+                        <h4>Highest-impact actions</h4>
+                        {% if resume_package.top_actions %}
+                        <ol class="resume-package-action-list">
+                            {% for item in resume_package.top_actions %}<li>{{ item }}</li>{% endfor %}
+                        </ol>
+                        {% else %}
+                        <p class="resume-package-empty">Use the diagnostic and action plan above to choose your first edits.</p>
+                        {% endif %}
+                        {% if resume_package.job_keywords %}
+                        <div class="resume-package-keyword-box">
+                            <span>Role keywords to verify</span>
+                            <div class="resume-skill-cloud">{% for skill in resume_package.job_keywords %}<span>{{ skill }}</span>{% endfor %}</div>
+                            <small>Add these only when you genuinely have the skill and can show evidence.</small>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </section>
+
+            <section class="resume-package-panel" id="resume-package-draft">
+                <div class="resume-package-panel-heading">
+                    <div>
+                        <div class="resume-package-eyebrow">03 / Resume upgrade draft</div>
+                        <h3>Build your final resume here.</h3>
+                        <div class="resume-photo-uploader">
+                            <div class="resume-photo-copy">
+                                <span class="resume-template-selector-label">Profile photo (optional)</span>
+                                <small>Upload a clear JPG or PNG for the resume header.</small>
+                            </div>
+                            <div class="resume-photo-controls">
+                                <label class="btn btn-sm btn-outline-secondary resume-photo-button">
+                                    <input type="file" accept="image/jpeg,image/png" data-resume-photo-input>
+                                    <span>Upload photo</span>
+                                </label>
+                                <button type="button" class="btn btn-sm btn-outline-danger" data-remove-resume-photo hidden>Remove</button>
+                            </div>
+                            <div class="resume-photo-preview-wrap" data-resume-photo-preview-wrap hidden>
+                                <img src="" alt="Profile photo preview" data-resume-photo-preview>
+                            </div>
+                            <div class="resume-photo-status" data-resume-photo-status aria-live="polite"></div>
+                        </div>
+                    </div>
+                    <div class="resume-package-draft-toolbar">
+                        <span class="resume-package-panel-note">{{ resume_package.draft_label }} · editable copy blocks</span>
+                        <div class="resume-template-selector" role="radiogroup" aria-label="Choose resume template">
+                            <span class="resume-template-selector-label">Choose a resume template</span>
+                            <div class="resume-template-options">
+                                <label class="resume-template-option">
+                                    <input type="radio" name="resume-template" value="modern" data-resume-template checked>
+                                    <span class="resume-template-card">
+                                        <span class="resume-template-preview resume-template-preview-modern" aria-hidden="true"><i></i><i></i><i></i></span>
+                                        <span><strong>Modern Navy</strong><small>Bold, polished</small></span>
+                                    </span>
+                                </label>
+                                <label class="resume-template-option">
+                                    <input type="radio" name="resume-template" value="minimal" data-resume-template>
+                                    <span class="resume-template-card">
+                                        <span class="resume-template-preview resume-template-preview-minimal" aria-hidden="true"><i></i><i></i><i></i></span>
+                                        <span><strong>Minimal Teal</strong><small>Clean, quiet</small></span>
+                                    </span>
+                                </label>
+                                <label class="resume-template-option">
+                                    <input type="radio" name="resume-template" value="classic" data-resume-template>
+                                    <span class="resume-template-card">
+                                        <span class="resume-template-preview resume-template-preview-classic" aria-hidden="true"><i></i><i></i><i></i></span>
+                                        <span><strong>Classic Charcoal</strong><small>Traditional, warm</small></span>
+                                    </span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="resume-package-download-actions">
+                            <button type="button" class="btn btn-sm btn-outline-primary" data-download-resume="pdf" data-download-url="{{ url_for('resume.generate_resume_document', file_format='pdf') }}">Generate PDF</button>
+                            <button type="button" class="btn btn-sm btn-primary" data-download-resume="word" data-download-url="{{ url_for('resume.generate_resume_document', file_format='word') }}">Generate Word file</button>
+                        </div>
+                    </div>
+                </div>
+                <p class="resume-package-intro">Copy each block into your final document, replace the bracketed placeholders, and remove sections that do not apply.</p>
+                <div class="resume-package-download-status" data-resume-download-status aria-live="polite"></div>
+                <div class="resume-package-draft-grid">
+                    {% for key, label in [('name', 'Full name'), ('contact', 'Contact line'), ('headline', 'Headline'), ('summary', 'Professional summary'), ('skills', 'Skills'), ('education', 'Education'), ('projects', 'Projects'), ('experience', 'Experience or practical work'), ('certifications', 'Certifications and courses'), ('achievements', 'Achievements')] %}
+                    <article id="resume-draft-card-{{ key }}" class="resume-package-draft-card{% if key in ['summary', 'projects', 'experience'] %} is-wide{% endif %}">
+                        <div class="resume-package-draft-heading">
+                            <h4>{{ label }}</h4>
+                            <div class="resume-package-draft-actions">
+                                <button type="button" class="btn btn-sm btn-outline-secondary" data-copy-target="resume-package-{{ key }}">Copy</button>
+                                <button type="button" class="btn btn-sm btn-outline-danger" data-remove-target="resume-draft-card-{{ key }}" data-remove-preview="{{ key }}">Remove</button>
+                            </div>
+                        </div>
+                        <textarea id="resume-package-{{ key }}" class="resume-package-textarea" data-resume-field="{{ key }}" rows="{% if key in ['summary', 'projects', 'experience'] %}5{% else %}3{% endif %}">{{ resume_package.resume_draft[key] }}</textarea>
+                    </article>
+                    {% endfor %}
+                </div>
+            </section>
+
+            <section class="resume-package-panel" id="resume-package-application">
+                <div class="resume-package-panel-heading">
+                    <div>
+                        <div class="resume-package-eyebrow">04 / Application kit</div>
+                        <h3>Apply without starting from zero.</h3>
+                    </div>
+                    <span class="resume-package-panel-note">Personalize before sending</span>
+                </div>
+                <div class="row g-4">
+                    <div class="col-lg-4">
+                        <article class="resume-package-copy-card">
+                            <div class="resume-package-draft-heading"><h4>Cover letter</h4><button type="button" class="btn btn-sm btn-outline-secondary" data-copy-target="resume-package-cover-letter">Copy</button></div>
+                            <textarea id="resume-package-cover-letter" class="resume-package-textarea" rows="13">{{ resume_package.application_kit.cover_letter }}</textarea>
+                        </article>
+                    </div>
+                    <div class="col-lg-4">
+                        <article class="resume-package-copy-card">
+                            <div class="resume-package-draft-heading"><h4>Recruiter message</h4><button type="button" class="btn btn-sm btn-outline-secondary" data-copy-target="resume-package-recruiter-message">Copy</button></div>
+                            <textarea id="resume-package-recruiter-message" class="resume-package-textarea" rows="13">{{ resume_package.application_kit.recruiter_message }}</textarea>
+                        </article>
+                    </div>
+                    <div class="col-lg-4">
+                        <article class="resume-package-copy-card">
+                            <div class="resume-package-draft-heading"><h4>LinkedIn About</h4><button type="button" class="btn btn-sm btn-outline-secondary" data-copy-target="resume-package-linkedin-about">Copy</button></div>
+                            <textarea id="resume-package-linkedin-about" class="resume-package-textarea" rows="13">{{ resume_package.application_kit.linkedin_about }}</textarea>
+                        </article>
+                    </div>
+                </div>
+            </section>
+
+            <section class="resume-package-panel" id="resume-package-plan">
+                <div class="resume-package-panel-heading">
+                    <div>
+                        <div class="resume-package-eyebrow">05 / 30-day plan</div>
+                        <h3>Turn the resume into job-search momentum.</h3>
+                    </div>
+                    <span class="resume-package-panel-note">One focused step at a time</span>
+                </div>
+                <div class="resume-package-plan-grid">
+                    {% for item in resume_package.plan %}
+                    <article class="resume-package-week-card">
+                        <span>{{ item.week }}</span>
+                        <h4>{{ item.focus }}</h4>
+                        <ul>{% for task in item.tasks %}<li>{{ task }}</li>{% endfor %}</ul>
+                    </article>
+                    {% endfor %}
+                </div>
+            </section>
+
+            <div class="resume-package-truth-note"><strong>Before you download:</strong> {{ resume_package.truth_note }}</div>
+        </section>
+        {% endif %}
+
+        {% else %}
+        <div class="alert alert-secondary">The review could not be displayed. <a href="{{ url_for('resume.resume_home') }}">Try another upload.</a></div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
