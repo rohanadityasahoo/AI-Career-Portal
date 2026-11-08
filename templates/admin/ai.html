@@ -13,9 +13,19 @@
         {% include "admin/_messages.html" %}
         {% if error %}<div class="alert alert-warning" role="alert">{{ error }}</div>{% endif %}
 
-        <div class="admin-ai-health mb-4">
-            <div><span class="dashboard-eyebrow">Provider</span><h2>Groq</h2><p>Model: <strong>{{ ai_model }}</strong></p></div>
-            <div class="admin-ai-health-status"><span class="admin-status-badge {{ 'admin-status-active' if ai_configured else 'admin-status-suspended' }}">{{ 'API key configured' if ai_configured else 'API key missing' }}</span><small>Keys and prompts are never shown in this panel.</small></div>
+        <div class="row g-3 mb-4">
+            <div class="col-lg-6">
+                <div class="admin-ai-health h-100">
+                    <div><span class="dashboard-eyebrow">Provider</span><h2>Groq</h2><p>Model: <strong>{{ ai_model }}</strong></p></div>
+                    <div class="admin-ai-health-status"><span class="admin-status-badge {{ 'admin-status-active' if ai_configured else 'admin-status-suspended' }}">{{ 'API key configured' if ai_configured else 'API key missing' }}</span><small>Keys and prompts are never shown in this panel.</small></div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="admin-ai-health h-100">
+                    <div><span class="dashboard-eyebrow">Document provider</span><h2>Reactive Resume</h2><p>PDF export: <strong>{{ reactive_resume_url }}</strong></p></div>
+                    <div class="admin-ai-health-status"><span class="admin-status-badge {{ 'admin-status-active' if reactive_resume_configured else 'admin-status-suspended' }}">{{ 'API key configured' if reactive_resume_configured else 'API key missing' }}</span><small>Used for polished resume PDF exports; keys are never shown.</small></div>
+                </div>
+            </div>
         </div>
 
         <div class="row g-3 mb-4">

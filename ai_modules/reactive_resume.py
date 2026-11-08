@@ -16,6 +16,11 @@ def _base_url():
     return os.getenv("REACTIVE_RESUME_API_URL", "https://rxresu.me/api/openapi").rstrip("/")
 
 
+def is_configured():
+    """Return whether the Reactive Resume API key is available."""
+    return bool(os.getenv("REACTIVE_RESUME_API_KEY", "").strip())
+
+
 def _headers():
     key = os.getenv("REACTIVE_RESUME_API_KEY", "").strip()
     return {"x-api-key": key}
@@ -90,7 +95,7 @@ def build_json_resume(draft, template_key="modern"):
 
 def export_pdf(draft, template_key="modern"):
     """Import a JSON Resume into Reactive Resume and return exported PDF bytes."""
-    if not os.getenv("REACTIVE_RESUME_API_KEY", "").strip():
+    if not is_configured():
         return None
     headers = _headers()
     base = _base_url()

@@ -2,6 +2,7 @@ from functools import wraps
 import os
 
 from ai_modules.career_ai import is_configured
+from ai_modules.reactive_resume import is_configured as is_reactive_resume_configured
 from database.db import ensure_auth_schema, get_db_connection
 from database.db import AI_FEATURE_DEFINITIONS
 from flask import (
@@ -324,6 +325,11 @@ def ai_management():
       ai_configured=is_configured(),
       ai_model=os.getenv('GROQ_MODEL', 'openai/gpt-oss-20b').strip()
       or 'openai/gpt-oss-20b',
+      reactive_resume_configured=is_reactive_resume_configured(),
+      reactive_resume_url=os.getenv(
+          'REACTIVE_RESUME_API_URL',
+          'https://rxresu.me/api/openapi',
+      ).strip(),
       enabled_features=sum(1 for feature in features if feature['is_enabled']),
       feature_count=len(features),
       stats=stats,
