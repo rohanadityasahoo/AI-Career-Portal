@@ -138,6 +138,27 @@ def build_resume_snapshot(resume_text: str, job_description: str = "", profile_t
         metric_count=len(metric_lines), detected_skills=detected_skills,
         profile_type=profile_type, required_sections=required_sections,
     )
+    score_gaps = _build_score_gaps(
+        scores={
+            "ATS readiness": ats_score,
+            "Section coverage": section_score,
+            "Content evidence": content_score,
+            "Skill visibility": skill_score,
+        },
+        sections=sections,
+        required_sections=required_sections,
+        facts={
+            "word_count": len(words),
+            "bullet_count": len(bullet_lines),
+            "action_bullet_count": len(action_lines),
+            "metric_bullet_count": len(metric_lines),
+            "has_email": has_email,
+            "has_phone": has_phone,
+            "has_link": has_link,
+        },
+        detected_skill_count=len(detected_skills),
+        profile_type=profile_type,
+    )
     return {
         "profile_type": profile_type, "profile_focus": profile_focus,
         "required_sections": required_sections,
@@ -146,7 +167,53 @@ def build_resume_snapshot(resume_text: str, job_description: str = "", profile_t
         "matched_job_skills": matched_job_skills, "job_match": job_match,
         "facts": {"word_count": len(words), "bullet_count": len(bullet_lines), "action_bullet_count": len(action_lines), "metric_bullet_count": len(metric_lines), "has_email": has_email, "has_phone": has_phone, "has_link": has_link},
         "observations": observations,
+        "overall_score_gaps": score_gaps["overall"],
+        "ats_score_gaps": score_gaps["ats"],
     }
+
+
+def _build_score_gaps(*, scores, sections, required_sections, facts, detected_skill_count, profile_type):
+    """Explain the concrete evidence thresholds behind both displayed scores."""
+    experienced = profile_type == "experienced"
+    word_target = 450 if experienced else 350
+    bullet_target = 10 if experienced else 8
+    action_target = 6 if experienced else 5
+    metric_target = 4 if experienced else 3
+    gaps = []
+
+    def add_gap(category, current, target, action, score_key):
+        current = int(current)
+        target = int(target)
+        if current < target:
+            gaps.append({
+                "category": category,
+                "current": current,
+                "target": target,
+                "shortfall": target - current,
+                "action": action,
+                "score_key": score_key,
+            })
+
+    missing_sections = [name for name in required_sections if not sections.get(name)]
+    if missing_sections:
+        add_gap(
+            "Required sections",
+            len(required_sections) - len(missing_sections),
+            len(required_sections),
+            "Add clear conventional headings for: " + ", ".join(missing_sections) + ".",
+            "Section coverage",
+        )
+    add_gap("Resume detail", facts["word_count"], word_target, f"Add relevant, truthful detail until the resume has about {word_target} words.", "Content evidence")
+    add_gap("Bullet points", facts["bullet_count"], bullet_target, f"Use at least {bullet_target} concise bullets for measurable work, projects, or achievements.", "Content evidence")
+    add_gap("Action-led bullets", facts["action_bullet_count"], action_target, f"Start at least {action_target} bullets with clear action verbs and describe your contribution.", "Content evidence")
+    add_gap("Quantified outcomes", facts["metric_bullet_count"], metric_target, f"Add {metric_target} verified numbers showing scale, time, users, results, or impact.", "Content evidence")
+    if not experienced and not sections.get("Certifications"):
+        add_gap("Certifications or training", 0, 1, "Add relevant certifications or training, or omit this only when none apply.", "Content evidence")
+    add_gap("Visible skills", detected_skill_count, 10, "List up to 10 relevant skills you can prove in the resume; do not add unsupported keywords.", "Skill visibility")
+    contact_current = sum(bool(facts[key]) for key in ("has_email", "has_phone", "has_link"))
+    add_gap("Contact essentials", contact_current, 3, "Include a professional email, phone number, and LinkedIn, GitHub, or portfolio link.", "ATS readiness")
+
+    return {"overall": gaps, "ats": list(gaps)}
 
 
 def _matched_skills(text: str) -> list[str]:

@@ -49,6 +49,12 @@
                                 <input class="visually-hidden" type="file" id="resume" name="resume" accept="application/pdf,.pdf" required data-resume-file>
                             </div>
 
+                            <div class="mb-3">
+                                <label for="target_company" class="form-label fw-semibold">Target company <span class="text-muted fw-normal">(optional)</span></label>
+                                <input type="text" class="form-control" id="target_company" name="target_company" maxlength="160" placeholder="e.g. Google, Microsoft, or a startup name" value="{{ target_company|default('', true) }}">
+                                <div class="form-text">If provided, the resume draft will be tailored toward this company's likely expectations. Leave blank for a general-purpose resume.</div>
+                            </div>
+
                             <div class="row g-3">
                                 <div class="col-md-5">
                                     <label for="target_role" class="form-label fw-semibold">Target job role <span class="text-danger">*</span></label>

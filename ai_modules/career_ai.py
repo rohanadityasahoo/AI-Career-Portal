@@ -129,6 +129,7 @@ def _string_list(value: Any, limit: int, item_limit: int = 180) -> list[str]:
 def analyze_resume(
     resume_text: str,
     target_role: str | None = None,
+    target_company: str | None = None,
     job_description: str | None = None,
     profile_type: str = "fresher",
     parsed_resume: dict | None = None,
@@ -143,6 +144,7 @@ def analyze_resume(
         return None
 
     role = _clip(target_role, 120)
+    company = _clip(target_company, 160)
     job_text = _clip(job_description, 8_000)
     profile_type = "experienced" if profile_type == "experienced" else "fresher"
     profile_label = "working professional" if profile_type == "experienced" else "fresher"
@@ -183,7 +185,8 @@ def analyze_resume(
         ),
         (
             f"Candidate profile type: {profile_label}\n"
-            f"Target role (optional): {role or 'Not supplied'}\n\n"
+            f"Target role (optional): {role or 'Not supplied'}\n"
+            f"Target company (optional): {company or 'Not supplied'}\n\n"
             "Evidence snapshot derived locally from the resume (authoritative):\n"
             f"{json.dumps(snapshot, ensure_ascii=False)}\n\n"
             "Structured resume parser output (extraction aid, not permission to invent):\n"
@@ -213,6 +216,7 @@ def analyze_resume(
 def generate_resume_draft(
     parsed_resume: dict,
     target_role: str = "",
+    target_company: str = "",
     job_description: str = "",
     profile_type: str = "fresher",
     resume_text: str = "",
@@ -220,6 +224,7 @@ def generate_resume_draft(
 ) -> tuple[dict[str, str], bool]:
     """Write a grounded resume draft from parsed facts and job requirements."""
     role = _clip(target_role, 120)
+    company = _clip(target_company, 160)
     job_text = _clip(job_description, 8_000)
     profile_label = "working professional" if profile_type == "experienced" else "fresher"
     parsed_resume = parsed_resume or {}
@@ -243,8 +248,10 @@ def generate_resume_draft(
             "resume data or source text. Never invent employers, degrees, dates, "
             "metrics, certifications, links, responsibilities, or skills. Use a "
             "bracketed placeholder only when a necessary fact is missing. Tailor "
-            "wording to the target role and job description, but include a keyword "
-            "only when the candidate has evidence for it. Return only JSON with a "
+            "wording to the target role, target company, and job description. Treat the company "
+            "as a preference signal, not proof of its exact hiring criteria; prioritize the supplied "
+            "job description when available and never invent company-specific facts or keywords. "
+            "Include a keyword only when the candidate has evidence for it. Return only JSON with a "
             "resume_draft object containing name, contact, headline, summary, skills, "
             "education, projects, experience, certifications, and achievements. "
             "Each field must be readable plain text; use line breaks and hyphen bullets "
@@ -252,7 +259,8 @@ def generate_resume_draft(
         ),
         (
             f"Candidate profile type: {profile_label}\n"
-            f"Target role: {role or 'Not supplied'}\n\n"
+            f"Target role: {role or 'Not supplied'}\n"
+            f"Target company: {company or 'Not supplied'}\n\n"
             "Structured resume parser output:\n"
             f"{json.dumps(parsed_resume, ensure_ascii=False)}\n\n"
             "Local analysis guidance:\n"
@@ -418,6 +426,10 @@ def _fallback_resume_feedback(snapshot: dict, role: str, has_job_description: bo
         "summary": summary,
         "overall_score": overall_score,
         "ats_score": scores["ATS readiness"],
+        "overall_points_remaining": max(0, 100 - overall_score),
+        "ats_points_remaining": max(0, 100 - scores["ATS readiness"]),
+        "overall_score_gaps": snapshot.get("overall_score_gaps", []),
+        "ats_score_gaps": snapshot.get("ats_score_gaps", []),
         "scores": scores,
         "sections": sections,
         "strengths": strengths[:4],

@@ -3,6 +3,7 @@ import uuid
 from io import BytesIO
 
 from ai_modules.career_ai import analyze_resume, generate_resume_draft
+from ai_modules.reactive_resume import export_pdf as export_reactive_resume_pdf
 from ai_modules.resume_documents import (
     build_resume_docx,
     build_resume_pdf,
@@ -70,6 +71,7 @@ def _upload_page(
     tool_mode,
     error=None,
     target_role='',
+    target_company='',
     job_description='',
 ):
   template_name = (
@@ -83,6 +85,7 @@ def _upload_page(
       tool_mode=tool_mode,
       error=error,
       target_role=target_role,
+      target_company=target_company,
       job_description=job_description,
   )
 
@@ -120,6 +123,7 @@ def resume_home():
       ), 400
 
     target_role = clean_optional_text(request.form.get('target_role'), 120)
+    target_company = clean_optional_text(request.form.get('target_company'), 160)
     job_description = clean_optional_text(
         request.form.get('job_description'), 8000
     )
@@ -130,6 +134,7 @@ def resume_home():
           tool_mode,
           'Enter the job role you are targeting so Resume Coach can build a focused package.',
           target_role,
+          target_company,
           job_description,
       ), 400
 
@@ -169,6 +174,7 @@ def resume_home():
       ai_feedback = analyze_resume(
           resume_text,
           target_role=target_role,
+          target_company=target_company,
           job_description=job_description,
           profile_type=profile_type,
           parsed_resume=parsed_resume,
@@ -184,12 +190,14 @@ def resume_home():
       resume_draft, writer_ai_assisted = generate_resume_draft(
           parsed_resume,
           target_role=target_role,
+          target_company=target_company,
           job_description=job_description,
           profile_type=profile_type,
           resume_text=resume_text,
           feedback=ai_feedback,
       )
     ai_feedback['resume_draft'] = resume_draft
+    ai_feedback['target_company'] = target_company
     ai_feedback['resume_writer_assisted'] = writer_ai_assisted
 
     missing_skills = ai_feedback.get('skill_gaps', [])
@@ -249,12 +257,14 @@ def resume_home():
         ai_feedback=ai_feedback,
         history_saved=history_saved,
         profile_type=profile_type,
+        target_company=target_company,
         resume_package=(
             build_fresher_resume_package(
                 ai_feedback,
                 target_role,
                 resume_text,
                 parsed_resume,
+                target_company,
             )
             if profile_type == 'fresher'
             else None
@@ -284,7 +294,14 @@ def generate_resume_document(file_format):
     return jsonify({'error': 'Add your full name before generating the resume.'}), 400
 
   if file_format == 'pdf':
-    document = build_resume_pdf(draft, template_key, photo_bytes)
+    document = None
+    if not photo_bytes:
+      try:
+        document = export_reactive_resume_pdf(draft, template_key)
+      except Exception:
+        current_app.logger.exception('Reactive Resume export failed; using local PDF renderer.')
+    if not document:
+      document = build_resume_pdf(draft, template_key, photo_bytes)
     return send_file(
         BytesIO(document),
         mimetype='application/pdf',

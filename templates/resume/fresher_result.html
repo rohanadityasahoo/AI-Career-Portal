@@ -52,6 +52,20 @@
             </div>
         </section>
 
+        <section class="resume-score-gap-panel mt-4 p-4 rounded border" aria-label="Path to a 100 overall score">
+            <div class="resume-section-kicker">Path to 100/100 overall readiness</div>
+            {% if ai_feedback.overall_score_gaps %}
+            <p class="small mb-2">{{ ai_feedback.overall_points_remaining }} points remain. Complete these evidence checks:</p>
+            <ul class="small mb-0 ps-3">
+                {% for gap in ai_feedback.overall_score_gaps %}
+                <li class="mb-2"><strong>{{ gap.category }} ({{ gap.current }}/{{ gap.target }})</strong> - {{ gap.action }}</li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p class="small mb-0">All current readiness thresholds are met. Keep every claim truthful and role-relevant.</p>
+            {% endif %}
+        </section>
+
         {% if resume_package %}
         <section class="resume-package-shell mt-5" id="resume-package">
             <header class="resume-package-header">
@@ -59,6 +73,7 @@
                     <div class="resume-package-eyebrow">Your all-in-one fresher package</div>
                     <h2>Everything you need to improve, present, and apply.</h2>
                     <p class="mb-0">Use this page as your resume workspace. The draft uses placeholders wherever only you can supply the truth.</p>
+                    {% if target_company %}<span class="resume-status-badge mt-3 d-inline-flex">Tailored toward {{ target_company }}</span>{% endif %}
                 </div>
             </header>
 
@@ -102,6 +117,19 @@
                         <span><strong>{{ ai_feedback.job_alignment.score }}%</strong> job match</span>
                         {% else %}
                         <span><strong>-</strong> add a job description for match</span>
+                        {% endif %}
+                    </div>
+                    <div class="resume-score-gap-panel mt-3 p-3 rounded border">
+                        <div class="resume-section-kicker">Path to 100/100 ATS readiness</div>
+                        {% if ai_feedback.ats_score_gaps %}
+                        <p class="small mb-2">{{ ai_feedback.ats_points_remaining }} points remain. Improve these ATS signals:</p>
+                        <ul class="small mb-0 ps-3">
+                            {% for gap in ai_feedback.ats_score_gaps %}
+                            <li class="mb-2"><strong>{{ gap.category }} ({{ gap.current }}/{{ gap.target }})</strong> - {{ gap.action }}</li>
+                            {% endfor %}
+                        </ul>
+                        {% else %}
+                        <p class="small mb-0">All current ATS thresholds are met. Match the resume to each job description before applying.</p>
                         {% endif %}
                     </div>
                 </div>

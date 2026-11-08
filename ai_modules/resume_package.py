@@ -60,7 +60,7 @@ def _local_resume_draft(role, skill_line, resume_text, parsed_resume=None):
   return build_resume_draft(parsed_resume, role, skill_line)
 
 
-def _resume_draft(feedback, role, skill_line, resume_text, parsed_resume=None):
+def _resume_draft(feedback, role, skill_line, resume_text, parsed_resume=None, target_company=""):
   fallback = _local_resume_draft(role, skill_line, resume_text, parsed_resume)
   supplied = feedback.get("resume_draft") or {}
   if not isinstance(supplied, dict):
@@ -81,7 +81,13 @@ def _resume_draft(feedback, role, skill_line, resume_text, parsed_resume=None):
   return draft, label
 
 
-def build_fresher_resume_package(feedback, target_role="", resume_text="", parsed_resume=None):
+def build_fresher_resume_package(
+    feedback,
+    target_role="",
+    resume_text="",
+    parsed_resume=None,
+    target_company="",
+):
   """Return a grounded ATS-friendly resume package for a fresher candidate."""
   feedback = feedback or {}
   role = _role_label(feedback, target_role)
@@ -113,10 +119,12 @@ def build_fresher_resume_package(feedback, target_role="", resume_text="", parse
       skill_line,
       resume_text,
       parsed_resume,
+      target_company=target_company,
   )
 
   return {
       "role": role,
+      "target_company": _clean(target_company, 160),
       "draft_label": draft_label,
       "ats_optimization": {
           "title": "ATS-friendly structure applied",

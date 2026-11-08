@@ -87,6 +87,32 @@
                         </div>
                         {% endfor %}
                     </div>
+                    <div class="resume-score-gap-panel mt-3 p-3 rounded border">
+                        <div class="professional-resume-section-label">Path to 100/100 overall impact</div>
+                        {% if ai_feedback.overall_score_gaps %}
+                        <p class="small mb-2">{{ ai_feedback.overall_points_remaining }} points remain. Complete these evidence checks:</p>
+                        <ul class="small mb-0 ps-3">
+                            {% for gap in ai_feedback.overall_score_gaps %}
+                            <li class="mb-2"><strong>{{ gap.category }} ({{ gap.current }}/{{ gap.target }})</strong> - {{ gap.action }}</li>
+                            {% endfor %}
+                        </ul>
+                        {% else %}
+                        <p class="small mb-0">All current impact thresholds are met. Keep every claim truthful and role-relevant.</p>
+                        {% endif %}
+                    </div>
+                    <div class="resume-score-gap-panel mt-3 p-3 rounded border">
+                        <div class="professional-resume-section-label">Path to 100/100 ATS readiness</div>
+                        {% if ai_feedback.ats_score_gaps %}
+                        <p class="small mb-2">{{ ai_feedback.ats_points_remaining }} points remain. Improve these ATS signals:</p>
+                        <ul class="small mb-0 ps-3">
+                            {% for gap in ai_feedback.ats_score_gaps %}
+                            <li class="mb-2"><strong>{{ gap.category }} ({{ gap.current }}/{{ gap.target }})</strong> - {{ gap.action }}</li>
+                            {% endfor %}
+                        </ul>
+                        {% else %}
+                        <p class="small mb-0">All current ATS thresholds are met. Match the resume to each job description before applying.</p>
+                        {% endif %}
+                    </div>
                     <div class="professional-resume-essential-grid" aria-label="Resume essentials">
                         <span class="{% if ai_feedback.facts.has_email %}is-found{% else %}is-missing{% endif %}">{% if ai_feedback.facts.has_email %}OK{% else %}!{% endif %} Email</span>
                         <span class="{% if ai_feedback.facts.has_phone %}is-found{% else %}is-missing{% endif %}">{% if ai_feedback.facts.has_phone %}OK{% else %}!{% endif %} Phone</span>
@@ -238,7 +264,7 @@
                     </div>
                 </div>
                 <div class="resume-package-draft-toolbar">
-                    <span class="resume-package-panel-note">{% if ai_feedback.resume_writer_assisted %}AI-drafted and job-tailored{% else %}Parser-drafted fallback{% endif %}</span>
+                    <span class="resume-package-panel-note">{% if ai_feedback.resume_writer_assisted %}{% if target_company %}AI-drafted toward {{ target_company }}{% else %}AI-drafted and job-tailored{% endif %}{% else %}Parser-drafted fallback{% endif %}</span>
                     <div class="resume-template-selector" role="radiogroup" aria-label="Choose resume template">
                         <span class="resume-template-selector-label">Choose a resume template</span>
                         <div class="resume-template-options">
