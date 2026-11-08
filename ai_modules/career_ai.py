@@ -129,6 +129,7 @@ def _string_list(value: Any, limit: int, item_limit: int = 180) -> list[str]:
 def analyze_resume(
     resume_text: str,
     target_role: str | None = None,
+    target_field: str | None = None,
     target_company: str | None = None,
     job_description: str | None = None,
     profile_type: str = "fresher",
@@ -144,12 +145,13 @@ def analyze_resume(
         return None
 
     role = _clip(target_role, 120)
+    field = _clip(target_field, 140)
     company = _clip(target_company, 160)
     job_text = _clip(job_description, 8_000)
     profile_type = "experienced" if profile_type == "experienced" else "fresher"
     profile_label = "working professional" if profile_type == "experienced" else "fresher"
     snapshot = build_resume_snapshot(resume_text, job_text, profile_type=profile_type)
-    feedback = _fallback_resume_feedback(snapshot, role, bool(job_text), profile_type)
+    feedback = _fallback_resume_feedback(snapshot, role, bool(job_text), profile_type, field)
 
     data = _json_completion(
         (
@@ -173,8 +175,12 @@ def analyze_resume(
             "objects with priority high|medium|low, title, diagnosis, action, "
             "and example), category_feedback (up to 3 objects with area and "
             "feedback), skill_gaps (up to 8 skill names only when a target "
-            "role or job description makes them relevant), and suggested_roles "
-            "(up to 3 objects with role and reason). Also return resume_draft "
+            "role, target field, or job description makes them relevant), and "
+            "suggested_roles (up to 3 objects with role and reason). For a working "
+            "professional who supplied a target field or role, also return "
+            "career_switch_plan as up to 5 objects with step, title, why, action, "
+            "and evidence. Explain transferable strengths, missing skills, bridge "
+            "projects or training, and how to reposition the resume. Also return resume_draft "
             "as an object with name, contact, headline, summary, skills, education, "
             "projects, experience, certifications, and achievements. The draft "
             "must use conventional ATS-friendly headings and plain text. Rewrite "
@@ -186,6 +192,7 @@ def analyze_resume(
         (
             f"Candidate profile type: {profile_label}\n"
             f"Target role (optional): {role or 'Not supplied'}\n"
+            f"Target field (optional): {field or 'Not supplied'}\n"
             f"Target company (optional): {company or 'Not supplied'}\n\n"
             "Evidence snapshot derived locally from the resume (authoritative):\n"
             f"{json.dumps(snapshot, ensure_ascii=False)}\n\n"
@@ -202,11 +209,11 @@ def analyze_resume(
         data.get(key)
         for key in (
             "summary", "strengths", "priority_actions", "category_feedback",
-            "skill_gaps", "suggested_roles", "resume_draft",
+            "skill_gaps", "suggested_roles", "career_switch_plan", "resume_draft",
         )
     ))
     if has_editorial_feedback:
-        feedback = _merge_resume_feedback(feedback, data, snapshot, role, bool(job_text))
+        feedback = _merge_resume_feedback(feedback, data, snapshot, role, bool(job_text), field)
         feedback["ai_assisted"] = True
     else:
         feedback["ai_assisted"] = False
@@ -216,6 +223,7 @@ def analyze_resume(
 def generate_resume_draft(
     parsed_resume: dict,
     target_role: str = "",
+    target_field: str = "",
     target_company: str = "",
     job_description: str = "",
     profile_type: str = "fresher",
@@ -224,6 +232,7 @@ def generate_resume_draft(
 ) -> tuple[dict[str, str], bool]:
     """Write a grounded resume draft from parsed facts and job requirements."""
     role = _clip(target_role, 120)
+    field = _clip(target_field, 140)
     company = _clip(target_company, 160)
     job_text = _clip(job_description, 8_000)
     profile_label = "working professional" if profile_type == "experienced" else "fresher"
@@ -248,7 +257,7 @@ def generate_resume_draft(
             "resume data or source text. Never invent employers, degrees, dates, "
             "metrics, certifications, links, responsibilities, or skills. Use a "
             "bracketed placeholder only when a necessary fact is missing. Tailor "
-            "wording to the target role, target company, and job description. Treat the company "
+            "wording to the target role, target field, target company, and job description. Treat the company "
             "as a preference signal, not proof of its exact hiring criteria; prioritize the supplied "
             "job description when available and never invent company-specific facts or keywords. "
             "Include a keyword only when the candidate has evidence for it. Return only JSON with a "
@@ -260,6 +269,7 @@ def generate_resume_draft(
         (
             f"Candidate profile type: {profile_label}\n"
             f"Target role: {role or 'Not supplied'}\n"
+            f"Target field: {field or 'Not supplied'}\n"
             f"Target company: {company or 'Not supplied'}\n\n"
             "Structured resume parser output:\n"
             f"{json.dumps(parsed_resume, ensure_ascii=False)}\n\n"
@@ -282,17 +292,19 @@ def generate_resume_draft(
     return draft, bool(supplied)
 
 
-def _fallback_resume_feedback(snapshot: dict, role: str, has_job_description: bool, profile_type: str = "fresher") -> dict:
+def _fallback_resume_feedback(snapshot: dict, role: str, has_job_description: bool, profile_type: str = "fresher", target_field: str = "") -> dict:
     """Build a profile-specific report when the editorial AI cannot be reached."""
     profile_type = "experienced" if profile_type == "experienced" else "fresher"
     experienced = profile_type == "experienced"
     scores = snapshot["scores"]
-    overall_score = round(
-        0.35 * scores["ATS readiness"]
-        + 0.25 * scores["Section coverage"]
-        + 0.25 * scores["Content evidence"]
-        + 0.15 * scores["Skill visibility"]
-    )
+    overall_score = snapshot.get("overall_score")
+    if overall_score is None:
+        overall_score = round(
+            0.35 * scores["ATS readiness"]
+            + 0.25 * scores["Section coverage"]
+            + 0.25 * scores["Content evidence"]
+            + 0.15 * scores["Skill visibility"]
+        )
     skills = snapshot["detected_skills"]
     facts = snapshot["facts"]
     sections = snapshot["sections"]
@@ -414,11 +426,20 @@ def _fallback_resume_feedback(snapshot: dict, role: str, has_job_description: bo
 
     if role:
         summary += f" The feedback is framed for a {role} direction."
+    if target_field and experienced:
+        summary += f" It includes a transition path into the {target_field} field."
     if has_job_description and job_skills:
         categories.append({
             "area": "Job alignment",
             "feedback": f"{len(snapshot['matched_job_skills'])} of {len(job_skills)} recognisable skills from the job description were also detected in the resume.",
         })
+
+    career_switch_plan = _fallback_career_switch_plan(
+        role,
+        target_field,
+        snapshot,
+        profile_type,
+    )
 
     return {
         "profile_type": profile_type,
@@ -441,9 +462,10 @@ def _fallback_resume_feedback(snapshot: dict, role: str, has_job_description: bo
         "job_alignment": _job_alignment(snapshot, has_job_description),
         "facts": facts,
         "review_basis": review_basis,
+        "career_switch_plan": career_switch_plan,
     }
 
-def _merge_resume_feedback(fallback: dict, data: dict, snapshot: dict, role: str, has_job_description: bool) -> dict:
+def _merge_resume_feedback(fallback: dict, data: dict, snapshot: dict, role: str, has_job_description: bool, target_field: str = '') -> dict:
     """Sanitise model output and preserve the local, auditable facts."""
     summary = _clip(data.get("summary"), 850) or fallback["summary"]
     strengths = _string_list(data.get("strengths"), 4, 260) or fallback["strengths"]
@@ -451,6 +473,7 @@ def _merge_resume_feedback(fallback: dict, data: dict, snapshot: dict, role: str
     categories = _category_list(data.get("category_feedback")) or fallback["category_feedback"]
     skill_gaps = _string_list(data.get("skill_gaps"), 8, 80) if (role or has_job_description) else []
     roles = _role_list(data.get("suggested_roles"))
+    career_switch_plan = _career_switch_plan(data.get("career_switch_plan")) or _fallback_career_switch_plan(role, target_field, snapshot, fallback.get("profile_type", "fresher"))
     resume_draft = _resume_draft(data.get("resume_draft"))
 
     result = dict(fallback)
@@ -461,10 +484,72 @@ def _merge_resume_feedback(fallback: dict, data: dict, snapshot: dict, role: str
         "category_feedback": categories,
         "skill_gaps": skill_gaps or fallback["skill_gaps"],
         "suggested_roles": roles or fallback["suggested_roles"],
+        "career_switch_plan": career_switch_plan,
     })
     if resume_draft:
         result["resume_draft"] = resume_draft
     return result
+
+def _fallback_career_switch_plan(role, target_field, snapshot, profile_type):
+    if profile_type != "experienced" or not (role or target_field):
+        return []
+    destination = " / ".join(part for part in (target_field, role) if part)
+    skills = ", ".join(snapshot.get("detected_skills", [])[:5]) or "your strongest verified skills"
+    return [
+        {
+            "step": "01",
+            "title": "Map transferable strengths",
+            "why": f"Your current experience should be translated into evidence for {destination} rather than presented as an unrelated career reset.",
+            "action": f"Identify three accomplishments that show skills useful in {destination}, such as {skills}, problem-solving, communication, operations, or ownership.",
+            "evidence": "A short list of three truthful achievements rewritten in the language of the target field.",
+        },
+        {
+            "step": "02",
+            "title": "Close the target-role skill gaps",
+            "why": "A career switch is more credible when the resume shows a deliberate plan to learn the new field's core requirements.",
+            "action": f"Compare {destination} job descriptions and choose two or three recurring skills to learn through a course, supervised practice, or a realistic work sample.",
+            "evidence": "Completed learning notes, certification, practice log, or another verifiable artifact.",
+        },
+        {
+            "step": "03",
+            "title": "Build bridge evidence",
+            "why": "Employers need proof that you can apply the new field's skills, not only interest in changing direction.",
+            "action": f"Create one focused project, volunteer assignment, shadowing experience, or portfolio sample that mirrors a real {destination} task.",
+            "evidence": "A work sample, project link, case study, or documented result that you can discuss in an interview.",
+        },
+        {
+            "step": "04",
+            "title": "Reposition the resume story",
+            "why": "The opening summary and recent bullets should make the move understandable within a few seconds.",
+            "action": f"Lead with your target direction, place transferable achievements first, and add a brief career-transition explanation without hiding your previous experience.",
+            "evidence": "A target-role headline, concise summary, and selected bullets that connect past work to {destination}.",
+        },
+    ]
+
+
+def _career_switch_plan(value: Any) -> list[dict[str, str]]:
+    if not isinstance(value, list):
+        return []
+    plan = []
+    for index, item in enumerate(value, start=1):
+        if not isinstance(item, dict):
+            continue
+        title = _clip(item.get("title"), 120)
+        why = _clip(item.get("why"), 360)
+        action = _clip(item.get("action"), 420)
+        evidence = _clip(item.get("evidence"), 320)
+        if title and why and action and evidence:
+            plan.append({
+                "step": _clip(item.get("step"), 8) or f"{index:02d}",
+                "title": title,
+                "why": why,
+                "action": action,
+                "evidence": evidence,
+            })
+        if len(plan) == 5:
+            break
+    return plan
+
 
 def _resume_draft(value: Any) -> dict[str, str]:
     if not isinstance(value, dict):

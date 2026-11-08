@@ -55,6 +55,12 @@
                                 <div class="form-text">If provided, the resume draft will be tailored toward this company's likely expectations. Leave blank for a general-purpose resume.</div>
                             </div>
 
+                            <div class="mb-3">
+                                <label for="target_field" class="form-label fw-semibold">Target field or industry <span class="text-muted fw-normal">(optional)</span></label>
+                                <input type="text" class="form-control" id="target_field" name="target_field" maxlength="140" placeholder="e.g. Culinary, Banking, Healthcare, or Education" value="{{ target_field|default('', true) }}">
+                                <div class="form-text">For a career switch, add the field you want to enter so we can explain the bridge from your current experience.</div>
+                            </div>
+
                             <div class="row g-3">
                                 <div class="col-md-5">
                                     <label for="target_role" class="form-label fw-semibold">Target job role <span class="text-muted fw-normal">(optional)</span></label>

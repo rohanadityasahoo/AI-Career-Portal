@@ -18,12 +18,12 @@ MAX_EXTRACTED_CHARACTERS = 30_000
 
 SECTION_PATTERNS = {
     "Contact details": r"\b(email|phone|mobile|linkedin|github|portfolio)\b",
-    "Professional summary": r"\b(summary|profile|objective|about me)\b",
-    "Experience": r"\b(experience|employment|work history|internship)\b",
-    "Education": r"\b(education|academic background|qualifications)\b",
-    "Skills": r"\b(technical skills|skills|competencies|technologies)\b",
-    "Projects": r"\b(projects|personal projects|academic projects)\b",
-    "Certifications": r"\b(certifications|certificates|courses|training)\b",
+    "Professional summary": r"(?:professional\s+)?(?:summary|profile|objective|about\s+me|career\s+summary)",
+    "Experience": r"(?:professional\s+)?(?:experience|employment|work\s+history|work\s+experience|internships?)",
+    "Education": r"(?:education|academic\s+background|qualifications)",
+    "Skills": r"(?:technical\s+skills|skills|competencies|technologies|core\s+skills)",
+    "Projects": r"(?:projects|personal\s+projects|academic\s+projects|selected\s+projects)",
+    "Certifications": r"(?:certifications|certificates|courses|training|professional\s+development)",
 }
 
 # These are intentionally recognisable, explicit terms rather than an attempt
@@ -57,8 +57,21 @@ ACTION_VERBS = {
     "achieved", "analyzed", "architected", "automated", "built", "collaborated",
     "created", "delivered", "designed", "developed", "engineered", "implemented",
     "improved", "increased", "launched", "led", "managed", "optimized", "reduced",
-    "researched", "streamlined", "tested", "trained",
+    "researched", "streamlined", "tested", "trained", "maintained", "performed",
+    "validated", "supported", "coordinated", "resolved", "facilitated", "mentored",
+    "owned", "oversaw", "conducted", "deployed", "migrated", "negotiated",
 }
+
+METRIC_PATTERN = re.compile(
+    r"(?<!\w)(?:"
+    r"\d+(?:\.\d+)?\s*%|"
+    r"\d+(?:\.\d+)?\s*(?:x|times|hours?|days?|weeks?|months?|years?|users?|clients?|customers?|records?|projects?|tickets?|cases?)\b|"
+    r"\d{1,3}(?:,\d{3})+(?:\.\d+)?|"
+    r"\d+(?:\.\d+)?\s*\+|"
+    r"(?:[$]|USD|EUR|GBP|INR)\s*\d+(?:\.\d+)?\s*[kmb]?"
+    r")(?!\w)",
+    re.IGNORECASE,
+)
 
 
 def extract_resume_text(pdf_path: str) -> str:
@@ -97,17 +110,14 @@ def build_resume_snapshot(resume_text: str, job_description: str = "", profile_t
     job_skills = _matched_skills(job_description)
     matched_job_skills = [skill for skill in job_skills if skill in detected_skills]
 
-    bullet_lines = [line for line in lines if re.match(r"^(?:[-•‣▪*]|\d+[.)])\s+", line)]
-    action_pattern = r"^(?:[-•‣▪*]|\d+[.)])\s+(?:[A-Z][a-z]+\s+)?(?:" + "|".join(sorted(ACTION_VERBS)) + r")\b"
+    bullet_lines = [line for line in lines if re.match(r"^(?:[-•‣▪*◦●]|\d+[.)])\s+", line)]
+    action_pattern = r"^(?:[-•‣▪*◦●]|\d+[.)])\s+(?:(?:successfully|independently|directly|proactively|consistently|effectively)\s+)?(?:" + "|".join(sorted(ACTION_VERBS)) + r")\b"
     action_lines = [line for line in bullet_lines if re.match(action_pattern, line, re.IGNORECASE)]
-    metric_lines = [
-        line for line in bullet_lines
-        if re.search(r"(?:\b\d+(?:\.\d+)?\s*(?:%|x|hours?|days?|weeks?|months?|users?|clients?|records?|projects?)\b|\b\d+[,+]\d+)", line, re.IGNORECASE)
-    ]
+    metric_lines = [line for line in bullet_lines if METRIC_PATTERN.search(line)]
 
     has_email = bool(re.search(r"\b[\w.+-]+@[\w-]+(?:\.[\w-]+)+\b", text))
-    has_phone = bool(re.search(r"(?:\+?\d[\d\s().-]{7,}\d)", text))
-    has_link = bool(re.search(r"\b(?:linkedin\.com|github\.com|https?://|www\.)", text, re.IGNORECASE))
+    has_phone = _has_phone_number(text)
+    has_link = bool(re.search(r"\b(?:linkedin\.com|github\.com|behance\.net|dribbble\.com|portfolio|https?://|www\.)", text, re.IGNORECASE))
     sections = {
         name: _has_section(lines, pattern)
         for name, pattern in SECTION_PATTERNS.items()
@@ -117,20 +127,45 @@ def build_resume_snapshot(resume_text: str, job_description: str = "", profile_t
     profile_type = "experienced" if profile_type == "experienced" else "fresher"
     contact_score = (has_email + has_phone + has_link) / 3
     keyword_score = min(len(detected_skills) / 10, 1)
+    skill_score = round(100 * (0.75 * keyword_score + 0.25 * int(sections.get("Skills", False))))
+    job_match = round(100 * len(matched_job_skills) / len(job_skills)) if job_skills else None
     if profile_type == "experienced":
         required_sections = ("Professional summary", "Experience", "Skills")
         profile_focus = "Professional impact"
         section_score = round(100 * sum(sections[name] for name in required_sections) / len(required_sections))
         content_score = round(100 * min(1, 0.15 * min(len(words) / 450, 1) + 0.30 * min(len(bullet_lines) / 10, 1) + 0.30 * min(len(action_lines) / 6, 1) + 0.25 * min(len(metric_lines) / 4, 1)))
-        ats_score = round(100 * (0.35 * (section_score / 100) + 0.20 * contact_score + 0.20 * keyword_score + 0.25 * (content_score / 100)))
     else:
         required_sections = ("Education", "Projects", "Skills")
         profile_focus = "Entry-level readiness"
         section_score = round(100 * sum(sections[name] for name in required_sections) / len(required_sections))
-        content_score = round(100 * min(1, 0.25 * min(len(words) / 350, 1) + 0.25 * min(len(bullet_lines) / 8, 1) + 0.25 * min(len(action_lines) / 5, 1) + 0.15 * min(len(metric_lines) / 3, 1) + 0.10 * int(sections.get("Certifications", False))))
-        ats_score = round(100 * (0.40 * (section_score / 100) + 0.20 * contact_score + 0.25 * keyword_score + 0.15 * (content_score / 100)))
-    skill_score = round(100 * keyword_score)
-    job_match = round(100 * len(matched_job_skills) / len(job_skills)) if job_skills else None
+        content_score = round(100 * min(1, 0.30 * min(len(words) / 350, 1) + 0.30 * min(len(bullet_lines) / 8, 1) + 0.20 * min(len(action_lines) / 5, 1) + 0.20 * min(len(metric_lines) / 3, 1)))
+
+    if job_match is not None:
+        ats_score = round(100 * (
+            0.30 * (section_score / 100)
+            + 0.15 * contact_score
+            + 0.20 * (skill_score / 100)
+            + 0.20 * (content_score / 100)
+            + 0.15 * (job_match / 100)
+        ))
+        overall_score = round(
+            0.30 * ats_score
+            + 0.20 * section_score
+            + 0.20 * content_score
+            + 0.15 * skill_score
+            + 0.15 * job_match
+        )
+    else:
+        if profile_type == "experienced":
+            ats_score = round(100 * (0.35 * (section_score / 100) + 0.20 * contact_score + 0.20 * (skill_score / 100) + 0.25 * (content_score / 100)))
+        else:
+            ats_score = round(100 * (0.40 * (section_score / 100) + 0.20 * contact_score + 0.25 * (skill_score / 100) + 0.15 * (content_score / 100)))
+        overall_score = round(
+            0.35 * ats_score
+            + 0.25 * section_score
+            + 0.25 * content_score
+            + 0.15 * skill_score
+        )
 
     observations = _build_observations(
         sections=sections, has_email=has_email, has_phone=has_phone, has_link=has_link,
@@ -157,11 +192,13 @@ def build_resume_snapshot(resume_text: str, job_description: str = "", profile_t
             "has_link": has_link,
         },
         detected_skill_count=len(detected_skills),
+        job_match=job_match,
         profile_type=profile_type,
     )
     return {
         "profile_type": profile_type, "profile_focus": profile_focus,
         "required_sections": required_sections,
+        "overall_score": overall_score,
         "scores": {"ATS readiness": ats_score, "Section coverage": section_score, "Content evidence": content_score, "Skill visibility": skill_score},
         "sections": sections, "detected_skills": detected_skills, "job_skills": job_skills,
         "matched_job_skills": matched_job_skills, "job_match": job_match,
@@ -172,7 +209,7 @@ def build_resume_snapshot(resume_text: str, job_description: str = "", profile_t
     }
 
 
-def _build_score_gaps(*, scores, sections, required_sections, facts, detected_skill_count, profile_type):
+def _build_score_gaps(*, scores, sections, required_sections, facts, detected_skill_count, job_match, profile_type):
     """Explain the concrete evidence thresholds behind both displayed scores."""
     experienced = profile_type == "experienced"
     word_target = 450 if experienced else 350
@@ -207,9 +244,9 @@ def _build_score_gaps(*, scores, sections, required_sections, facts, detected_sk
     add_gap("Bullet points", facts["bullet_count"], bullet_target, f"Use at least {bullet_target} concise bullets for measurable work, projects, or achievements.", "Content evidence")
     add_gap("Action-led bullets", facts["action_bullet_count"], action_target, f"Start at least {action_target} bullets with clear action verbs and describe your contribution.", "Content evidence")
     add_gap("Quantified outcomes", facts["metric_bullet_count"], metric_target, f"Add {metric_target} verified numbers showing scale, time, users, results, or impact.", "Content evidence")
-    if not experienced and not sections.get("Certifications"):
-        add_gap("Certifications or training", 0, 1, "Add relevant certifications or training, or omit this only when none apply.", "Content evidence")
     add_gap("Visible skills", detected_skill_count, 10, "List up to 10 relevant skills you can prove in the resume; do not add unsupported keywords.", "Skill visibility")
+    if job_match is not None:
+        add_gap("Job keyword alignment", job_match, 100, "Match the job description's relevant keywords only where your resume contains truthful supporting evidence.", "ATS readiness")
     contact_current = sum(bool(facts[key]) for key in ("has_email", "has_phone", "has_link"))
     add_gap("Contact essentials", contact_current, 3, "Include a professional email, phone number, and LinkedIn, GitHub, or portfolio link.", "ATS readiness")
 
@@ -222,13 +259,35 @@ def _matched_skills(text: str) -> list[str]:
     return [skill for skill, pattern in SKILL_PATTERNS.items() if re.search(pattern, text, re.IGNORECASE)]
 
 
+def _has_phone_number(text: str) -> bool:
+    """Avoid treating years and date ranges as phone numbers."""
+    candidates = re.findall(r"(?<!\d)(?:\+?\d[\d\s().-]{7,}\d)(?!\d)", text)
+    for candidate in candidates:
+        digits = re.sub(r"\D", "", candidate)
+        separators = len(re.findall(r"[\s().-]", candidate))
+        year_chunks = re.findall(r"\b(?:19|20)\d{2}\b", candidate)
+        if len(year_chunks) >= 2 and len(digits) == len(year_chunks) * 4:
+            continue
+        if 7 <= len(digits) <= 15 and (len(digits) >= 10 or separators >= 2):
+            return True
+    return False
+
+
 def _has_section(lines: Iterable[str], pattern: str) -> bool:
     """Detect a conventional section heading without treating body prose as one."""
     for line in lines:
-        candidate = line.strip().rstrip(":").strip()
+        candidate = re.sub(r"\s+", " ", line.strip().rstrip(":").strip())
+        candidate = re.sub(r"^(?:[-•‣▪*◦●]|\d+[.)])\s+", "", candidate)
+        candidate = re.sub(r"\s*(?:\||–|—)\s*", " - ", candidate)
         # Long sentences that happen to contain "skills" or "experience" are
         # content, not section labels. Most resume headings are short lines.
-        if len(candidate) <= 48 and re.fullmatch(pattern, candidate, re.IGNORECASE):
+        if len(candidate) <= 60 and re.fullmatch(pattern, candidate, re.IGNORECASE):
+            return True
+        if len(candidate) <= 60 and re.fullmatch(
+            rf"(?:{pattern})(?:\s*(?:&|and|/|-|:)\s*[A-Za-z][A-Za-z ]*)?",
+            candidate,
+            re.IGNORECASE,
+        ):
             return True
     return False
 

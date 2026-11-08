@@ -71,6 +71,7 @@ def _upload_page(
     tool_mode,
     error=None,
     target_role='',
+    target_field='',
     target_company='',
     job_description='',
 ):
@@ -85,6 +86,7 @@ def _upload_page(
       tool_mode=tool_mode,
       error=error,
       target_role=target_role,
+      target_field=target_field,
       target_company=target_company,
       job_description=job_description,
   )
@@ -123,6 +125,7 @@ def resume_home():
       ), 400
 
     target_role = clean_optional_text(request.form.get('target_role'), 120)
+    target_field = clean_optional_text(request.form.get('target_field'), 140)
     target_company = clean_optional_text(request.form.get('target_company'), 160)
     job_description = clean_optional_text(
         request.form.get('job_description'), 8000
@@ -134,6 +137,7 @@ def resume_home():
           tool_mode,
           'Enter the job role you are targeting so Resume Coach can build a focused package.',
           target_role,
+          target_field,
           target_company,
           job_description,
       ), 400
@@ -174,6 +178,7 @@ def resume_home():
       ai_feedback = analyze_resume(
           resume_text,
           target_role=target_role,
+          target_field=target_field,
           target_company=target_company,
           job_description=job_description,
           profile_type=profile_type,
@@ -190,6 +195,7 @@ def resume_home():
       resume_draft, writer_ai_assisted = generate_resume_draft(
           parsed_resume,
           target_role=target_role,
+          target_field=target_field,
           target_company=target_company,
           job_description=job_description,
           profile_type=profile_type,
@@ -198,6 +204,7 @@ def resume_home():
       )
     ai_feedback['resume_draft'] = resume_draft
     ai_feedback['target_company'] = target_company
+    ai_feedback['target_field'] = target_field
     ai_feedback['resume_writer_assisted'] = writer_ai_assisted
 
     missing_skills = ai_feedback.get('skill_gaps', [])
@@ -217,6 +224,7 @@ def resume_home():
                 student_id,
                 profile_type,
                 resume_filename,
+                resume_text,
                 ats_score,
                 jd_match_percentage,
                 skill_score,
@@ -224,12 +232,13 @@ def resume_home():
                 content_score,
                 matched_skills,
                 missing_skills
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """,
             (
                 session.get('student_id'),
                 profile_type,
                 safe_name,
+                resume_text[:120000],
                 ai_feedback.get('overall_score'),
                 job_alignment.get('score'),
                 scores.get('Skill visibility'),
@@ -257,7 +266,9 @@ def resume_home():
         ai_feedback=ai_feedback,
         history_saved=history_saved,
         profile_type=profile_type,
+        target_role=target_role,
         target_company=target_company,
+        target_field=target_field,
         resume_package=(
             build_fresher_resume_package(
                 ai_feedback,

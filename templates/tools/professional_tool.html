@@ -1,0 +1,70 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}{{ config.title }} | CareerPilot AI{% endblock %}
+
+{% block content %}
+<section class="career-tools-page professional-tool-page">
+    <div class="container py-5">
+        {% include "tools/_header.html" %}
+        <div class="row g-4 mt-1 align-items-start">
+            <div class="col-lg-5">
+                <section class="career-tool-panel professional-tool-form-panel">
+                    <div class="career-tools-eyebrow">{{ config.eyebrow }}</div>
+                    <h2>{{ config.title }}</h2>
+                    <p class="text-muted">{{ config.description }}</p>
+                    <form method="POST" class="career-tool-form">
+                        {% for field in config.fields %}
+                        {% set meta = field_meta[field] %}
+                        <label for="{{ field }}">{{ meta.label }}{% if field in ['target_company', 'recruiter_name', 'company', 'job_description'] %} <span class="text-muted fw-normal">(optional)</span>{% endif %}</label>
+                        {% if meta.kind == 'textarea' %}
+                        <textarea class="form-control" id="{{ field }}" name="{{ field }}" rows="{% if field in ['resume_text', 'job_description', 'highlights'] %}7{% else %}3{% endif %}" maxlength="8000" placeholder="{{ meta.placeholder }}">{{ form[field] }}</textarea>
+                        {% else %}
+                        <input class="form-control" id="{{ field }}" name="{{ field }}" maxlength="160" value="{{ form[field] }}" placeholder="{{ meta.placeholder }}">
+                        {% endif %}
+                        {% endfor %}
+                        <button class="btn btn-primary" type="submit">Build my report <span aria-hidden="true">&rarr;</span></button>
+                    </form>
+                </section>
+                <a class="professional-tool-backlink" href="{{ url_for('career_tools.professional_suite') }}">&larr; Back to the full professional toolkit</a>
+            </div>
+            <div class="col-lg-7">
+                {% if result %}
+                <section class="career-tool-panel professional-tool-result">
+                    <div class="professional-result-header">
+                        <div>
+                            <div class="career-tools-eyebrow">Your working report</div>
+                            <h2>{{ result.summary }}</h2>
+                        </div>
+                        {% if result.score is not none %}<div class="professional-result-score"><strong>{{ result.score }}</strong><span>/100</span></div>{% endif %}
+                    </div>
+                    <div class="professional-result-metrics">
+                        {% for metric in result.metrics %}<div><span>{{ metric.label }}</span><strong>{{ metric.value }}</strong></div>{% endfor %}
+                    </div>
+                    {% for section in result.sections %}
+                    <article class="professional-result-section">
+                        <h3>{{ section.get('heading', '') }}</h3>
+                        {% if section.get('body', '') %}<p>{{ section.get('body', '') }}</p>{% endif %}
+                        {% if section.get('items', []) %}
+                        <div class="professional-result-list">
+                            {% for item in section.get('items', []) %}
+                            {% if item is mapping %}<div class="professional-result-item{% if item.status %} is-{{ item.status }}{% endif %}"><strong>{{ item.heading }}</strong><span>{{ item.body }}</span></div>{% else %}<div class="professional-result-item"><span>{{ item }}</span></div>{% endif %}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </article>
+                    {% endfor %}
+                    <p class="professional-result-notice"><span aria-hidden="true">i</span>{{ result.notice }}</p>
+                </section>
+                {% else %}
+                <section class="career-tool-panel professional-tool-empty">
+                    <div class="professional-tool-empty-mark">{{ config.eyebrow[:2] }}</div>
+                    <h2>Your report will appear here.</h2>
+                    <p>Use the form to turn your current experience into practical next actions. The local report stays explainable so you can verify every recommendation.</p>
+                    <div class="professional-tool-empty-steps"><span>01 <strong>Add context</strong></span><span>02 <strong>Build report</strong></span><span>03 <strong>Take action</strong></span></div>
+                </section>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

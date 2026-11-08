@@ -22,6 +22,26 @@
             </div>
         </header>
 
+        <section class="resume-target-context" aria-label="Resume review context">
+            <div class="resume-target-context-heading">
+                <span>Review context</span>
+                <strong>{% if target_role or target_field or target_company %}Tailored application guidance{% else %}Broad-market guidance{% endif %}</strong>
+            </div>
+            <div class="resume-target-context-items">
+                {% if target_role %}<span class="resume-target-context-item"><small>Target role</small>{{ target_role }}</span>{% endif %}
+                {% if target_field %}<span class="resume-target-context-item"><small>Field</small>{{ target_field }}</span>{% endif %}
+                {% if target_company %}<span class="resume-target-context-item"><small>Company</small>{{ target_company }}</span>{% endif %}
+                {% if not target_role and not target_field and not target_company %}<span class="resume-target-context-item is-general">No target selected; recommendations stay broadly applicable.</span>{% endif %}
+            </div>
+        </section>
+
+        <nav class="resume-review-rail" aria-label="Resume improvement workflow">
+            <a class="is-current" href="#resume-package-review"><span>01</span><div><strong>Review</strong><small>See the gaps</small></div></a>
+            <a href="#resume-package-draft"><span>02</span><div><strong>Build</strong><small>Edit your draft</small></div></a>
+            <a href="#resume-package-application"><span>03</span><div><strong>Apply</strong><small>Prepare your kit</small></div></a>
+            <a href="#resume-package-plan"><span>04</span><div><strong>Move forward</strong><small>Follow the plan</small></div></a>
+        </nav>
+
         {% if not history_saved %}
         <div class="alert alert-warning mt-4 mb-0">Your review is ready, but we could not save it to your history right now.</div>
         {% endif %}
@@ -30,8 +50,13 @@
             <div class="col-lg-4">
                 <div class="resume-score-panel h-100">
                     <span class="resume-score-label">Overall entry-level readiness</span>
-                    <div class="resume-score-orb" aria-label="Overall readiness score {{ ai_feedback.overall_score }} out of 100">
+                    <div class="resume-score-orb" style="--score: {{ ai_feedback.overall_score }}%;" aria-label="Overall readiness score {{ ai_feedback.overall_score }} out of 100">
                         <strong>{{ ai_feedback.overall_score }}</strong><span>/100</span>
+                    </div>
+                    <div class="resume-score-insight">
+                        <span>Readiness signal</span>
+                        <strong>{% if ai_feedback.overall_score >= 80 %}Strong foundation{% elif ai_feedback.overall_score >= 60 %}Promising base{% else %}Build the proof{% endif %}</strong>
+                        <small>{% if ai_feedback.overall_points_remaining %}{{ ai_feedback.overall_points_remaining }} points from the next level{% else %}Current readiness thresholds are met{% endif %}</small>
                     </div>
                     <p class="small mb-0">Weighted diagnostic based on project evidence, education, scannability, practical content, and visible skills—not a hiring prediction.</p>
                 </div>
@@ -50,6 +75,36 @@
                     </div>
                 </div>
             </div>
+        </section>
+
+        {% set fresher_sections_ready = (1 if ai_feedback.sections.get('Education') else 0) + (1 if ai_feedback.sections.get('Projects') else 0) + (1 if ai_feedback.sections.get('Skills') else 0) %}
+        {% set fresher_contact_ready = (1 if ai_feedback.facts.has_email else 0) + (1 if ai_feedback.facts.has_phone else 0) + (1 if ai_feedback.facts.has_link else 0) %}
+        {% set fresher_contact_percentage = 100 if fresher_contact_ready == 3 else (66 if fresher_contact_ready == 2 else (33 if fresher_contact_ready == 1 else 0)) %}
+        <section class="resume-results-detail-grid" aria-label="Resume details at a glance">
+            <article class="resume-results-detail-card">
+                <span>Section coverage</span>
+                <strong>{{ ai_feedback.scores['Section coverage'] }}<small>/100</small></strong>
+                <div class="resume-detail-track" role="progressbar" aria-label="Section coverage" aria-valuenow="{{ ai_feedback.scores['Section coverage'] }}" aria-valuemin="0" aria-valuemax="100"><span style="width: {{ ai_feedback.scores['Section coverage'] }}%"></span></div>
+                <p>{{ fresher_sections_ready }}/3 core fresher sections detected.</p>
+            </article>
+            <article class="resume-results-detail-card">
+                <span>Content evidence</span>
+                <strong>{{ ai_feedback.scores['Content evidence'] }}<small>/100</small></strong>
+                <div class="resume-detail-track" role="progressbar" aria-label="Content evidence" aria-valuenow="{{ ai_feedback.scores['Content evidence'] }}" aria-valuemin="0" aria-valuemax="100"><span style="width: {{ ai_feedback.scores['Content evidence'] }}%"></span></div>
+                <p>{{ ai_feedback.facts.word_count }} words and {{ ai_feedback.facts.bullet_count }} bullets reviewed.</p>
+            </article>
+            <article class="resume-results-detail-card">
+                <span>Skills visibility</span>
+                <strong>{{ ai_feedback.detected_skills|length }}<small> detected</small></strong>
+                <div class="resume-detail-track" role="progressbar" aria-label="Skill visibility" aria-valuenow="{{ ai_feedback.scores['Skill visibility'] }}" aria-valuemin="0" aria-valuemax="100"><span style="width: {{ ai_feedback.scores['Skill visibility'] }}%"></span></div>
+                <p>Relevant tools and skills found in the uploaded resume.</p>
+            </article>
+            <article class="resume-results-detail-card">
+                <span>Contact readiness</span>
+                <strong>{{ fresher_contact_ready }}<small>/3 essentials</small></strong>
+                <div class="resume-detail-track" role="progressbar" aria-label="Contact readiness" aria-valuenow="{{ fresher_contact_percentage }}" aria-valuemin="0" aria-valuemax="100"><span style="width: {{ fresher_contact_percentage }}%"></span></div>
+                <p>Email, phone, and profile link visibility.</p>
+            </article>
         </section>
 
         <section class="resume-score-gap-panel mt-4 p-4 rounded border" aria-label="Path to a 100 overall score">

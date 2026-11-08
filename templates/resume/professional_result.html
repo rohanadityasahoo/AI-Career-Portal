@@ -18,6 +18,11 @@
                     <div class="professional-resume-score-ring" style="--score: {{ ai_feedback.overall_score }}%;">
                         <strong>{{ ai_feedback.overall_score }}</strong><small>/100</small>
                     </div>
+                    <div class="professional-resume-score-insight">
+                        <span>Readiness signal</span>
+                        <strong>{% if ai_feedback.overall_score >= 80 %}Strong foundation{% elif ai_feedback.overall_score >= 60 %}Promising base{% else %}Build the proof{% endif %}</strong>
+                        <small>{% if ai_feedback.overall_points_remaining %}{{ ai_feedback.overall_points_remaining }} points from the next level{% else %}Current impact thresholds are met{% endif %}</small>
+                    </div>
                     <em>Diagnostic, not a hiring prediction</em>
                 </div>
             </header>
@@ -35,8 +40,58 @@
                     {% endif %}
                     <span>{{ ai_feedback.review_basis }}</span>
                 </div>
-                <a href="{{ url_for('resume.resume_home') }}" class="btn professional-resume-button">Analyze another resume</a>
+                <div class="d-flex flex-wrap gap-2 justify-content-end">
+                    <a href="{{ url_for('career_tools.professional_suite', target_role=target_role, target_field=target_field, target_company=target_company) }}" class="btn professional-resume-button">Open professional toolkit</a>
+                    <a href="{{ url_for('resume.resume_home') }}" class="btn professional-resume-button">Analyze another resume</a>
+                </div>
             </div>
+
+            <section class="resume-target-context professional-resume-target-context" aria-label="Resume review context">
+                <div class="resume-target-context-heading">
+                    <span>Review context</span>
+                    <strong>{% if target_role or target_field or target_company %}Positioning for your next move{% else %}Broad-market guidance{% endif %}</strong>
+                </div>
+                <div class="resume-target-context-items">
+                    {% if target_role %}<span class="resume-target-context-item"><small>Target role</small>{{ target_role }}</span>{% endif %}
+                    {% if target_field %}<span class="resume-target-context-item"><small>Field</small>{{ target_field }}</span>{% endif %}
+                    {% if target_company %}<span class="resume-target-context-item"><small>Company</small>{{ target_company }}</span>{% endif %}
+                    {% if not target_role and not target_field and not target_company %}<span class="resume-target-context-item is-general">No target selected; recommendations stay broadly applicable.</span>{% endif %}
+                </div>
+            </section>
+
+            <section class="professional-generator-tools" aria-labelledby="professional-generator-tools-title">
+                <div class="professional-generator-tools-heading">
+                    <div>
+                        <span class="professional-resume-section-label">Working professional generators</span>
+                        <h2 id="professional-generator-tools-title">Build the complete next-move package.</h2>
+                        <p>Use your resume review as the starting point for positioning, career switching, ATS alignment, outreach, and applications.</p>
+                    </div>
+                    <a class="professional-generator-tools-link" href="{{ url_for('career_tools.professional_suite', target_role=target_role, target_field=target_field, target_company=target_company) }}">Open full toolkit &rarr;</a>
+                </div>
+                <div class="professional-generator-grid">
+                    <a href="{{ url_for('career_tools.professional_tool', tool_slug='resume-health', target_role=target_role, target_field=target_field, target_company=target_company) }}"><span>01</span><strong>Resume health</strong><small>Find structure and evidence gaps</small></a>
+                    <a href="{{ url_for('career_tools.professional_tool', tool_slug='career-positioning', target_role=target_role, target_field=target_field, target_company=target_company) }}"><span>02</span><strong>Career positioning</strong><small>Clarify your next-role story</small></a>
+                    <a href="{{ url_for('career_tools.job_matcher', target_role=target_role, target_field=target_field, target_company=target_company) }}"><span>03</span><strong>Role/company match</strong><small>Compare against a real job post</small></a>
+                    <a href="{{ url_for('career_tools.professional_tool', tool_slug='career-switch-planner', target_role=target_role, target_field=target_field, target_company=target_company) }}"><span>04</span><strong>Career switch plan</strong><small>Build the bridge to a new field</small></a>
+                    <a href="{{ url_for('career_tools.professional_tool', tool_slug='achievement-extractor', target_role=target_role, target_field=target_field, target_company=target_company) }}"><span>05</span><strong>Achievement extractor</strong><small>Turn tasks into proof</small></a>
+                    <a href="{{ url_for('career_tools.resume_tailor') }}"><span>06</span><strong>Resume editor</strong><small>Edit, template, and export</small></a>
+                    <a href="{{ url_for('career_tools.professional_tool', tool_slug='ats-optimizer', target_role=target_role, target_field=target_field, target_company=target_company) }}"><span>07</span><strong>ATS optimizer</strong><small>Align keywords with evidence</small></a>
+                    <a href="{{ url_for('career_tools.professional_tool', tool_slug='linkedin-optimizer', target_role=target_role, target_field=target_field, target_company=target_company) }}"><span>08</span><strong>LinkedIn optimizer</strong><small>Draft your profile direction</small></a>
+                    <a href="{{ url_for('career_tools.cover_letter', target_role=target_role, target_company=target_company) }}"><span>09</span><strong>Cover letter</strong><small>Create a role-specific draft</small></a>
+                    <a href="{{ url_for('career_tools.professional_tool', tool_slug='recruiter-message', target_role=target_role, target_field=target_field, target_company=target_company) }}"><span>10</span><strong>Recruiter message</strong><small>Write concise outreach</small></a>
+                    <a href="{{ url_for('career_tools.professional_tool', tool_slug='promotion-leadership', target_role=target_role, target_field=target_field, target_company=target_company) }}"><span>12</span><strong>Leadership analyzer</strong><small>Show scope and influence</small></a>
+                    <a href="{{ url_for('career_tools.professional_tool', tool_slug='career-story', target_role=target_role, target_field=target_field, target_company=target_company) }}"><span>13</span><strong>Career story</strong><small>Prepare your interview narrative</small></a>
+                    <a href="{{ url_for('career_tools.skill_gap', target_role=target_role) }}"><span>14</span><strong>Skill-gap roadmap</strong><small>Prioritize missing proof</small></a>
+                    <a href="{{ url_for('career_tools.application_tracker') }}"><span>15</span><strong>Application tracker</strong><small>Keep every follow-up moving</small></a>
+                </div>
+            </section>
+
+            <nav class="professional-resume-nav resume-review-rail" aria-label="Resume dashboard workflow">
+                <a class="is-current" href="#professional-resume-overview"><span>01</span><div><strong>Review</strong><small>Read the story</small></div></a>
+                <a href="#professional-resume-ats"><span>02</span><div><strong>Score</strong><small>Check ATS signals</small></div></a>
+                {% if ai_feedback.career_switch_plan %}<a href="#professional-resume-roadmap"><span>03</span><div><strong>Reposition</strong><small>Plan the next move</small></div></a>{% else %}<a href="#professional-resume-actions"><span>03</span><div><strong>Improve</strong><small>Fix priority gaps</small></div></a>{% endif %}
+                {% if ai_feedback.resume_draft %}<a href="#professional-resume-draft"><span>04</span><div><strong>Edit & download</strong><small>Finish your resume</small></div></a>{% endif %}
+            </nav>
 
             <section class="professional-resume-kpi-grid" aria-label="Professional resume signals">
                 <article class="professional-resume-kpi">
@@ -61,7 +116,40 @@
                 </article>
             </section>
 
-            <section class="professional-resume-story-grid">
+            {% set professional_contact_ready = (1 if ai_feedback.facts.has_email else 0) + (1 if ai_feedback.facts.has_phone else 0) + (1 if ai_feedback.facts.has_link else 0) %}
+            {% set professional_contact_percentage = 100 if professional_contact_ready == 3 else (66 if professional_contact_ready == 2 else (33 if professional_contact_ready == 1 else 0)) %}
+            <section class="resume-results-detail-grid professional-resume-detail-grid" aria-label="Professional resume details at a glance">
+                <article class="resume-results-detail-card">
+                    <span>Section coverage</span>
+                    <strong>{{ ai_feedback.scores['Section coverage'] }}<small>/100</small></strong>
+                    <div class="resume-detail-track" role="progressbar" aria-label="Section coverage" aria-valuenow="{{ ai_feedback.scores['Section coverage'] }}" aria-valuemin="0" aria-valuemax="100"><span style="width: {{ ai_feedback.scores['Section coverage'] }}%"></span></div>
+                    <p>Professional summary, experience, and skills structure.</p>
+                </article>
+                <article class="resume-results-detail-card">
+                    <span>Content evidence</span>
+                    <strong>{{ ai_feedback.scores['Content evidence'] }}<small>/100</small></strong>
+                    <div class="resume-detail-track" role="progressbar" aria-label="Content evidence" aria-valuenow="{{ ai_feedback.scores['Content evidence'] }}" aria-valuemin="0" aria-valuemax="100"><span style="width: {{ ai_feedback.scores['Content evidence'] }}%"></span></div>
+                    <p>{{ ai_feedback.facts.action_bullet_count }} action-led and {{ ai_feedback.facts.metric_bullet_count }} quantified bullets.</p>
+                </article>
+                <article class="resume-results-detail-card">
+                    <span>Contact readiness</span>
+                    <strong>{{ professional_contact_ready }}<small>/3 essentials</small></strong>
+                    <div class="resume-detail-track" role="progressbar" aria-label="Contact readiness" aria-valuenow="{{ professional_contact_percentage }}" aria-valuemin="0" aria-valuemax="100"><span style="width: {{ professional_contact_percentage }}%"></span></div>
+                    <p>Email, phone, and profile link visibility.</p>
+                </article>
+                <article class="resume-results-detail-card resume-results-detail-card-focus">
+                    <span>First focus</span>
+                    {% if ai_feedback.overall_score_gaps %}
+                    <strong>{{ ai_feedback.overall_score_gaps[0].category }}</strong>
+                    <p>{{ ai_feedback.overall_score_gaps[0].action }}</p>
+                    {% else %}
+                    <strong>Keep the proof sharp</strong>
+                    <p>Review each claim for clear scope, outcomes, and target-role relevance.</p>
+                    {% endif %}
+                </article>
+            </section>
+
+            <section class="professional-resume-story-grid" id="professional-resume-overview">
                 <article class="professional-resume-story-card">
                     <div class="professional-resume-section-label">Career story</div>
                     <h2>Does your resume show why you are ready for more?</h2>
@@ -71,7 +159,7 @@
                         <strong>{{ ai_feedback.facts.bullet_count }} resume bullets reviewed</strong>
                     </div>
                 </article>
-                <article class="professional-resume-signal-card">
+                <article class="professional-resume-signal-card" id="professional-resume-ats">
                     <div class="professional-resume-section-label">AI ATS scorecard</div>
                     <h2>What recruiters and parsers see first.</h2>
                     <div class="professional-resume-ats-highlight">
@@ -122,7 +210,30 @@
                 </article>
             </section>
 
-            <section class="professional-resume-section-heading">
+            {% if ai_feedback.career_switch_plan %}
+            <section class="professional-resume-section-heading" id="professional-resume-roadmap">
+                <div>
+                    <div class="professional-resume-section-label">Career switch roadmap</div>
+                    <h2>How to move into {{ target_field or target_role or 'your target direction' }}.</h2>
+                </div>
+                <span>What to do next and how to prove it</span>
+            </section>
+            <section class="professional-resume-action-list">
+                {% for item in ai_feedback.career_switch_plan %}
+                <article class="professional-resume-action-card">
+                    <div class="professional-resume-action-index">{{ item.step }}</div>
+                    <div class="professional-resume-action-copy">
+                        <div class="professional-resume-action-heading"><h3>{{ item.title }}</h3></div>
+                        <p>{{ item.why }}</p>
+                        <div class="professional-resume-next-move"><strong>What to do</strong>{{ item.action }}</div>
+                        <div class="professional-resume-example"><strong>Proof to build</strong>{{ item.evidence }}</div>
+                    </div>
+                </article>
+                {% endfor %}
+            </section>
+            {% endif %}
+
+            <section class="professional-resume-section-heading" id="professional-resume-actions">
                 <div>
                     <div class="professional-resume-section-label">Career transition plan</div>
                     <h2>Strengthen the evidence behind your next role.</h2>
@@ -176,7 +287,7 @@
                 </article>
             </section>
 
-            <section class="professional-resume-skill-card">
+            <section class="professional-resume-skill-card" id="professional-resume-skills">
                 <div>
                     <div class="professional-resume-section-label">Capability inventory</div>
                     <h2>Skills your resume makes visible.</h2>
