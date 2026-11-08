@@ -1,4 +1,5 @@
 import os
+import json
 import uuid
 from io import BytesIO
 
@@ -29,6 +30,7 @@ from flask import (
     request,
     send_file,
     session,
+    url_for,
 )
 from werkzeug.utils import secure_filename
 
@@ -203,6 +205,7 @@ def resume_home():
           feedback=ai_feedback,
       )
     ai_feedback['resume_draft'] = resume_draft
+    ai_feedback['target_role'] = target_role
     ai_feedback['target_company'] = target_company
     ai_feedback['target_field'] = target_field
     ai_feedback['resume_writer_assisted'] = writer_ai_assisted
@@ -225,6 +228,7 @@ def resume_home():
                 profile_type,
                 resume_filename,
                 resume_text,
+                analysis_json,
                 ats_score,
                 jd_match_percentage,
                 skill_score,
@@ -232,13 +236,14 @@ def resume_home():
                 content_score,
                 matched_skills,
                 missing_skills
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """,
             (
                 session.get('student_id'),
                 profile_type,
                 safe_name,
                 resume_text[:120000],
+                json.dumps(ai_feedback, default=str),
                 ai_feedback.get('overall_score'),
                 job_alignment.get('score'),
                 scores.get('Skill visibility'),
@@ -283,6 +288,81 @@ def resume_home():
     )
 
   return _upload_page(profile_type, tool_mode)
+
+
+@resume.route('/resume/dashboard')
+def resume_dashboard():
+  """Reopen the latest generated resume dashboard for the signed-in student."""
+  if 'student_id' not in session:
+    return redirect('/login')
+
+  profile_type = _student_profile_type()
+  conn = None
+  try:
+    conn = get_db_connection()
+    with conn.cursor() as cursor:
+      ensure_resume_analysis_schema(cursor)
+      conn.commit()
+      cursor.execute(
+          """
+          SELECT analysis_json, resume_text, profile_type
+          FROM resume_analysis
+          WHERE student_id = %s
+          ORDER BY created_at DESC, analysis_id DESC
+          LIMIT 1
+          """,
+          (session['student_id'],),
+      )
+      row = cursor.fetchone()
+  finally:
+    if conn:
+      conn.close()
+
+  if not row or not row.get('analysis_json'):
+    return redirect(url_for('resume.resume_home'))
+
+  try:
+    ai_feedback = row['analysis_json']
+    if isinstance(ai_feedback, str):
+      ai_feedback = json.loads(ai_feedback)
+  except (TypeError, ValueError, json.JSONDecodeError):
+    current_app.logger.exception('Could not reopen saved resume analysis.')
+    return redirect(url_for('resume.resume_home'))
+
+  if not isinstance(ai_feedback, dict):
+    return redirect(url_for('resume.resume_home'))
+
+  profile_type = row.get('profile_type') or profile_type
+  resume_text = row.get('resume_text') or ''
+  target_role = ai_feedback.get('target_role', '')
+  target_company = ai_feedback.get('target_company', '')
+  target_field = ai_feedback.get('target_field', '')
+  parsed_resume = parse_resume_text(resume_text)
+  result_template = (
+      'resume/professional_result.html'
+      if profile_type == 'experienced'
+      else 'resume/fresher_result.html'
+  )
+  return render_template(
+      result_template,
+      ai_feedback=ai_feedback,
+      history_saved=True,
+      profile_type=profile_type,
+      target_role=target_role,
+      target_company=target_company,
+      target_field=target_field,
+      resume_package=(
+          build_fresher_resume_package(
+              ai_feedback,
+              target_role,
+              resume_text,
+              parsed_resume,
+              target_company,
+          )
+          if profile_type == 'fresher'
+          else None
+      ),
+  )
 
 
 @resume.route('/resume/generate/<file_format>', methods=['POST'])

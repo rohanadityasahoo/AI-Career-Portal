@@ -57,59 +57,42 @@ PROFESSIONAL_TOOL_CATALOG = (
         'kind': 'generic',
     },
     {
-        'number': '06', 'slug': 'resume-editor',
-        'title': 'Resume editor',
-        'description': 'Open the editable draft, switch templates, review wording, and export your resume.',
-        'endpoint': 'resume_tailor',
-    },
-    {
-        'number': '07', 'slug': 'ats-optimizer',
+        'number': '06', 'slug': 'ats-optimizer',
         'title': 'ATS keyword optimizer',
         'description': 'Find the important language from a job post and place it where a recruiter can verify it.',
         'kind': 'generic',
     },
     {
-        'number': '08', 'slug': 'linkedin-optimizer',
+        'number': '07', 'slug': 'linkedin-optimizer',
         'title': 'LinkedIn optimizer',
         'description': 'Draft a focused headline, About section, skills, and proof-building featured section.',
         'kind': 'generic',
     },
     {
-        'number': '09', 'slug': 'cover-letter',
+        'number': '08', 'slug': 'cover-letter',
         'title': 'Cover-letter generator',
         'description': 'Create a truthful, role-specific cover letter grounded in the evidence you provide.',
         'endpoint': 'cover_letter',
     },
     {
-        'number': '10', 'slug': 'recruiter-message',
+        'number': '09', 'slug': 'recruiter-message',
         'title': 'Recruiter-message generator',
         'description': 'Write a concise outreach message that makes the next step easy to answer.',
         'kind': 'generic',
     },
     {
-        'number': '12', 'slug': 'promotion-leadership',
+        'number': '10', 'slug': 'promotion-leadership',
         'title': 'Promotion & leadership analyzer',
         'description': 'Measure how clearly your resume shows scope, influence, leadership, and readiness.',
         'kind': 'generic',
     },
     {
-        'number': '13', 'slug': 'career-story',
+        'number': '11', 'slug': 'career-story',
         'title': 'Career story builder',
         'description': 'Build a confident interview and networking story for an advancement or career switch.',
         'kind': 'generic',
     },
-    {
-        'number': '14', 'slug': 'skill-gap',
-        'title': 'Skill-gap roadmap',
-        'description': 'Prioritize the skills and evidence that will make your target role more believable.',
-        'endpoint': 'skill_gap',
-    },
-    {
-        'number': '15', 'slug': 'application-tracker',
-        'title': 'Job application tracker',
-        'description': 'Keep every application, follow-up, interview, and next action in one accountable pipeline.',
-        'endpoint': 'application_tracker',
-    },
+
 )
 
 PROFESSIONAL_TOOL_CONFIG = {
@@ -138,31 +121,31 @@ PROFESSIONAL_TOOL_CONFIG = {
         'fields': ('resume_text', 'highlights'),
     },
     'ats-optimizer': {
-        'eyebrow': '07 / ATS optimizer',
+        'eyebrow': '06 / ATS optimizer',
         'title': 'Align the language without keyword stuffing.',
         'description': 'Compare the job description with your resume evidence and get a short, defensible keyword checklist.',
         'fields': ('target_role', 'job_description', 'resume_text', 'skills'),
     },
     'linkedin-optimizer': {
-        'eyebrow': '08 / LinkedIn optimizer',
+        'eyebrow': '07 / LinkedIn optimizer',
         'title': 'Make your profile tell the same story.',
         'description': 'Draft the high-signal parts of LinkedIn from your current role, target direction, and real strengths.',
         'fields': ('current_role', 'current_company', 'target_role', 'target_field', 'skills', 'highlights'),
     },
     'recruiter-message': {
-        'eyebrow': '10 / Recruiter message',
+        'eyebrow': '09 / Recruiter message',
         'title': 'Start a useful conversation.',
         'description': 'Create a short message that names the role, gives relevant proof, and ends with a clear ask.',
         'fields': ('recruiter_name', 'company', 'target_role', 'highlights'),
     },
     'promotion-leadership': {
-        'eyebrow': '12 / Promotion & leadership',
+        'eyebrow': '10 / Promotion & leadership',
         'title': 'Show scope before you ask for the next level.',
         'description': 'Check whether the resume demonstrates influence, ownership, decision-making, and people or program leadership.',
         'fields': ('current_role', 'target_role', 'resume_text', 'highlights'),
     },
     'career-story': {
-        'eyebrow': '13 / Career story builder',
+        'eyebrow': '11 / Career story builder',
         'title': 'Explain your move with confidence.',
         'description': 'Build a concise story for interviews, networking, and recruiter conversations without inventing a new past.',
         'fields': ('current_role', 'target_role', 'target_field', 'highlights'),
@@ -187,7 +170,11 @@ SKILL_DETAILS = {
     'Agile': ('Show how you planned, delivered, and improved work in short cycles.', 'Write one delivery story using context, action, and outcome.'),
     'Analytics': ('Explain how you used data to choose a direction or measure an outcome.', 'Add one metric-led case study to your portfolio or resume.'),
     'API testing': ('Demonstrate reliable validation of endpoints, contracts, and error paths.', 'Create an API test collection with positive and negative cases.'),
+    'Account management': ('Show how you owned follow-ups, renewals, escalations, or outcomes for an account.', 'Document one account or customer scenario with the need, action, and result.'),
+    'Banking operations': ('Show accurate handling of account servicing, compliance, or banking workflows.', 'Create a practice case covering customer need, process steps, controls, and outcome.'),
+    'Customer relationship management': ('Show how you understood customer needs, built trust, and maintained relationships.', 'Write a customer scenario covering discovery, advice, follow-up, and the result.'),
     'Excel': ('Show formulas, pivots, data cleaning, and business conclusions.', 'Build a small dashboard from a messy dataset and document the decisions.'),
+    'Financial products': ('Show how you matched a customer need to a suitable financial product.', 'Compare two financial products in a practice case and explain the recommendation and trade-offs.'),
     'Git': ('Show collaborative version control and a repeatable development workflow.', 'Publish a project with meaningful commits, a README, and a pull-request example.'),
     'Java': ('Demonstrate object-oriented design, testing, and maintainable services.', 'Build or document one Java service with tests and a clear README.'),
     'JavaScript': ('Show interactive, maintainable front-end or Node.js work.', 'Publish a small feature with tests, error handling, and deployment notes.'),
@@ -199,6 +186,7 @@ SKILL_DETAILS = {
     'Python': ('Demonstrate readable automation, analysis, or backend code.', 'Publish a tested project with setup instructions and one measurable result.'),
     'Requirements gathering': ('Convert stakeholder needs into clear, testable requirements.', 'Create a sample requirements brief with acceptance criteria.'),
     'Roadmapping': ('Explain sequencing, dependencies, and outcome-based prioritization.', 'Create a roadmap tied to user outcomes and success metrics.'),
+    'Sales': ('Show needs discovery, solution positioning, follow-up, and a truthful commercial outcome.', 'Create a practice sales case that documents the customer need, recommendation, and conversion or next step.'),
     'Scrum': ('Show practical use of ceremonies, roles, and iterative delivery.', 'Describe one sprint cycle and the improvement you would make next.'),
     'Selenium': ('Demonstrate browser automation with stable, maintainable tests.', 'Build a small page-object test suite with readable failure output.'),
     'SQL': ('Show that you can query, validate, and explain data accurately.', 'Add a SQL case study with joins, aggregations, and a business conclusion.'),
@@ -209,10 +197,14 @@ SKILL_DETAILS = {
 }
 
 SKILL_ALIASES = {
+    'Account management': ('account management', 'portfolio management', 'portfolio', 'account servicing'),
     'Agile': ('agile',),
     'Analytics': ('analytics', 'data analysis'),
     'API testing': ('api testing', 'api test', 'rest api'),
+    'Banking operations': ('banking operations', 'banking', 'kyc', 'aml', 'account opening'),
+    'Customer relationship management': ('customer relationship management', 'client relationship management', 'relationship management', 'customer service', 'client service', 'crm'),
     'Excel': ('excel', 'microsoft excel'),
+    'Financial products': ('financial products', 'banking products', 'loan', 'credit', 'deposit', 'investment'),
     'Git': ('git', 'github', 'gitlab'),
     'Java': ('java',),
     'JavaScript': ('javascript', 'js', 'node.js', 'node js'),
@@ -224,6 +216,7 @@ SKILL_ALIASES = {
     'Python': ('python',),
     'Requirements gathering': ('requirements gathering', 'requirements analysis'),
     'Roadmapping': ('roadmapping', 'roadmap'),
+    'Sales': ('sales', 'business development', 'cross selling', 'revenue'),
     'Scrum': ('scrum',),
     'Selenium': ('selenium',),
     'SQL': ('sql', 'mysql', 'postgresql', 'postgres'),
@@ -275,6 +268,13 @@ ROLE_LIBRARY = (
         'skills': ('Project management', 'Agile', 'Scrum', 'Jira', 'Stakeholder management'),
         'summary': 'Coordinate people, scope, risks, and timelines to deliver work predictably.',
         'next_step': 'Show a delivery case study covering scope, risks, communication, and the result achieved.',
+    },
+    {
+        'role': 'Relationship Manager',
+        'field': 'Banking and client relationships',
+        'skills': ('Customer relationship management', 'Sales', 'Financial products', 'Banking operations', 'Account management'),
+        'summary': 'Build and retain customer relationships by matching needs to products, managing accounts, and growing trust.',
+        'next_step': 'Create a case study showing customer discovery, a suitable product recommendation, follow-up, and a truthful outcome.',
     },
 )
 
@@ -659,35 +659,103 @@ def _health_report(form):
   }
 
 
+TRANSFERABLE_POSITIONING_SIGNALS = (
+  ('Cross-functional collaboration', ('worked with', 'collaborated', 'partnered', 'cross-functional', 'developers', 'product managers', 'stakeholder')),
+  ('Coordination and delivery', ('coordinated', 'managed', 'led', 'release', 'sprint', 'scrum', 'agile')),
+  ('Analytical problem solving', ('validated', 'analysis', 'sql', 'investigated', 'defect', 'root cause', 'data')),
+  ('Process and quality discipline', ('test cases', 'regression', 'coverage', 'tracked', 'requirements', 'process')),
+  ('Customer or client communication', ('customer', 'client', 'relationship', 'presented', 'advised', 'communicated')),
+)
+
+POSITIONING_TARGET_PROFILES = (
+  {
+      'matches': ('relationship manager', 'banking', 'bank'),
+      'requirements': (
+          ('Customer or client relationship management', ('customer', 'client', 'relationship management')),
+          ('Sales or business development', ('sales', 'business development', 'cross-selling', 'revenue')),
+          ('Financial products and banking operations', ('financial products', 'banking', 'loan', 'credit', 'deposit', 'investment', 'kyc', 'aml')),
+          ('Portfolio or account management', ('portfolio', 'account management', 'crm')),
+      ),
+  },
+)
+
+def _contains_phrase(text, phrase):
+  return ' ' + phrase.lower() + ' ' in _normalised_text(text)
+
+def _positioning_transferable_signals(text):
+  return [
+      {'label': label, 'evidence': next(phrase for phrase in phrases if _contains_phrase(text, phrase))}
+      for label, phrases in TRANSFERABLE_POSITIONING_SIGNALS
+      if any(_contains_phrase(text, phrase) for phrase in phrases)
+  ]
+
+def _positioning_target_profile(target_role, target_field):
+  target_text = _normalised_text(' '.join((target_role, target_field)))
+  return next(
+      (profile for profile in POSITIONING_TARGET_PROFILES if any(_contains_phrase(target_text, phrase) for phrase in profile['matches'])),
+      None,
+  )
+
+def _positioning_target_fit(target_role, target_field, evidence, skills):
+  target_profile = _positioning_target_profile(target_role, target_field)
+  normalized_evidence = _normalised_text(evidence)
+  if target_profile:
+    found = []
+    missing = []
+    for label, phrases in target_profile['requirements']:
+      if any(_contains_phrase(normalized_evidence, phrase) for phrase in phrases):
+        found.append(label)
+      else:
+        missing.append(label)
+    alignment = round(100 * len(found) / len(target_profile['requirements']))
+    return alignment, found, missing
+
+  role, required = _requirements(target_role, '')
+  matched = _matched_skills(skills, required)
+  role_mentioned = target_role and _contains_phrase(normalized_evidence, target_role)
+  alignment = 100 if role_mentioned else round(100 * len(matched) / len(required)) if required else 0
+  return alignment, matched, [skill for skill in required if skill not in matched]
 def _positioning_report(form):
   current = form.get('current_role') or 'your current role'
   target = form.get('target_role') or 'your next role'
   field = form.get('target_field') or 'the target field'
   company = form.get('target_company')
-  evidence = _evidence_text(form, 'highlights', 'skills')
-  skills = _skill_list(evidence)
-  strengths = ', '.join(skills[:4]) if skills else 'transferable delivery and problem-solving experience'
-  statement = f'{current} with evidence in {strengths}, positioning for {target} in {field}.'
+  evidence = _evidence_text(form, 'highlights')
+  skills = _extract_skills(form.get('skills') or form.get('resume_text'))
+  transfer_signals = _positioning_transferable_signals(evidence)
+  alignment, found, missing = _positioning_target_fit(target, field, evidence, skills)
+  proof_points = _content_lines(form.get('highlights') or form.get('resume_text'))
+  strengths = ', '.join(signal['label'].lower() for signal in transfer_signals[:4])
+  strengths = strengths or 'transferable delivery and problem-solving experience'
+  statement = f'{current} with evidence of {strengths}, positioning for {target} in {field}.'
+  if missing:
+    statement += f' The resume still needs evidence of {missing[0].lower()} before claiming target-role expertise.'
   if company:
-    statement += f' For {company}, lead with the business outcomes you can repeat in that environment.'
-  highlights = _content_lines(evidence)
+    statement += f' For {company}, lead with outcomes that are relevant to that environment.'
+  transfer_score = min(100, len(transfer_signals) * 20)
+  proof_score = min(100, len(proof_points) * 25)
+  score = round(0.6 * alignment + 0.25 * transfer_score + 0.15 * proof_score)
+  target_fit_items = [
+      {'heading': 'Evidence found', 'body': ', '.join(found) if found else 'No direct target-role evidence detected in the supplied resume.'},
+      {'heading': 'Still missing', 'body': ', '.join(missing) if missing else 'No major target-fit gaps detected from the supplied evidence.'},
+  ]
   return {
-      'score': min(100, 55 + len(skills) * 8 + (15 if form.get('target_role') else 0) + (10 if form.get('target_field') else 0)),
+      'score': score,
       'summary': 'A strong positioning statement connects your proven value to the work you want next; it does not hide your career history.',
       'metrics': [
           {'label': 'Current anchor', 'value': current},
           {'label': 'Target direction', 'value': target},
-          {'label': 'Transferable strengths', 'value': str(len(skills))},
+          {'label': 'Transferable strengths', 'value': str(len(transfer_signals))},
+          {'label': 'Target evidence', 'value': f'{alignment}%'},
       ],
       'sections': [
           {'heading': 'Positioning statement', 'body': statement},
-          {'heading': 'Lead with these proof points', 'items': highlights[:4] or ['Add two or three outcomes that show ownership, not only responsibilities.']},
+          {'heading': 'Target-fit check', 'items': target_fit_items},
+          {'heading': 'Lead with these proof points', 'items': proof_points[:4] or ['Add two or three outcomes that show ownership, not only responsibilities.']},
           {'heading': 'Avoid', 'items': ['A generic objective that could describe anyone.', 'Listing every task instead of selecting evidence tied to the target role.', 'Claiming target-field expertise before building visible proof.']},
       ],
-      'notice': 'Use this language as a starting point. Replace broad phrases with facts you can explain in an interview.',
+      'notice': 'This score measures evidence alignment, not hiring readiness. Build proof for the missing target-role requirements before presenting the switch as complete.',
   }
-
-
 def _switch_report(form):
   target_role = form.get('target_role') or form.get('target_field') or ''
   role, required = _requirements(target_role, '')
@@ -724,24 +792,63 @@ def _switch_report(form):
   }
 
 
+def _resume_bullet_lines(resume_text):
+  bullets = []
+  for raw_line in str(resume_text or '').splitlines():
+    raw_line = raw_line.strip()
+    if not re.match(r'^(?:[-*]|\u2022)', raw_line):
+      continue
+    line = re.sub(r'^(?:[-*]|\u2022)\s*', '', raw_line)
+    if len(line.split()) >= 5:
+      bullets.append(_clean(line, 420))
+  return bullets
+
+
+def _evidence_lines(form):
+  resume_lines = _resume_bullet_lines(form.get('resume_text'))
+  if not resume_lines:
+    resume_lines = _content_lines(form.get('resume_text'))
+  lines = []
+  seen = set()
+  for line in _content_lines(form.get('highlights')) + resume_lines:
+    normalized = re.sub(r'[^a-z0-9]+', ' ', line.lower()).strip()
+    if normalized and normalized not in seen:
+      lines.append(line)
+      seen.add(normalized)
+  return lines[:24]
+
+
 def _achievement_report(form):
-  source = form.get('resume_text') or form.get('highlights')
-  lines = _content_lines(source)
-  action_pattern = r'\b(led|built|created|improved|delivered|managed|launched|reduced|increased|automated|owned|developed|optimized|coordinated|designed|implemented)\b'
+  lines = _evidence_lines(form)[:8]
+
+  action_pattern = r'\b(led|built|created|improved|delivered|managed|launched|reduced|increased|automated|owned|developed|optimized|coordinated|designed|implemented|maintained|validated|reported|tracked|performed|prepared|participated|supported|reproduced|worked|provided|tested)\b'
+  metric_pattern = r'(?<!\d)(?:\d{1,3}(?:,\d{3})*\+?|\d+(?:\.\d+)?%|[$₹€£]\s?\d+)'
   items = []
-  for line in lines[:8]:
+  strong_count = 0
+  action_count = 0
+  metric_count = 0
+  for line in lines:
     has_action = bool(re.search(action_pattern, line, re.I))
-    has_metric = bool(re.search(r'(?<!\d)(?:\d{1,3}(?:,\d{3})*\+?|\d+(?:\.\d+)?%|[$₹€£]\s?\d+)', line))
+    has_metric = bool(re.search(metric_pattern, line))
     signal = 'Strong evidence' if has_action and has_metric else 'Add outcome detail' if has_action else 'Rewrite around ownership'
     edit = 'Keep this bullet and make the result easy to scan.' if has_action and has_metric else 'Add a truthful metric, scale, time, or quality result after the action.' if has_action else 'Start with the decision or action you personally owned, then add the outcome.'
     items.append({'heading': signal, 'body': f'Source: {line} | Next edit: {edit}'})
+    strong_count += int(has_action and has_metric)
+    action_count += int(has_action)
+    metric_count += int(has_metric)
+  reviewed = len(items)
+  score = round(100 * (
+      0.5 * strong_count / reviewed
+      + 0.3 * action_count / reviewed
+      + 0.2 * metric_count / reviewed
+  )) if reviewed else 0
   return {
-      'score': min(100, len(items) * 10 + sum(bool(re.search(r'\d', item['body'])) for item in items) * 8),
+      'score': score,
       'summary': 'The strongest resume bullets show what you owned, what changed, and how the change can be verified.',
       'metrics': [
-          {'label': 'Bullets reviewed', 'value': str(len(items))},
-          {'label': 'Action-led signals', 'value': str(sum(bool(re.search(action_pattern, line, re.I)) for line in lines))},
-          {'label': 'Metric signals', 'value': str(sum(bool(re.search(r'\d', line)) for line in lines))},
+          {'label': 'Bullets reviewed', 'value': str(reviewed)},
+          {'label': 'Action-led signals', 'value': str(action_count)},
+          {'label': 'Metric signals', 'value': str(metric_count)},
       ],
       'sections': [
           {'heading': 'Extracted evidence', 'items': items or [{'heading': 'Paste experience bullets', 'body': 'Add the text from your experience section to identify achievements.'}]},
@@ -767,9 +874,16 @@ def _ats_report(form):
   matched = [keyword for keyword in keywords if ' ' + keyword.lower() + ' ' in resume_lower or keyword.lower() in resume_lower]
   missing = [keyword for keyword in keywords if keyword not in matched]
   score = round(100 * len(matched) / len(keywords)) if keywords else 0
+  target_label = form.get('target_role') or role['role']
+  if job_text:
+    summary = f'Job-description keyword alignment is {score}%. Use the missing terms only when they describe real work you can prove.'
+    notice = 'ATS alignment is a visibility check. It does not replace readable writing or evidence of results.'
+  else:
+    summary = f'No job description was supplied. Baseline keyword alignment for {target_label} is {score}%. Paste a real job post for employer-specific ATS matching.'
+    notice = 'This baseline uses common target-role signals. Paste a real job description for employer-specific ATS alignment.'
   return {
       'score': score,
-      'summary': f'Keyword alignment is {score}%. Use the missing terms only when they describe real work you can prove.',
+      'summary': summary,
       'metrics': [
           {'label': 'Keywords checked', 'value': str(len(keywords))},
           {'label': 'Visible in resume', 'value': str(len(matched))},
@@ -780,7 +894,7 @@ def _ats_report(form):
           {'heading': 'Add or prove next', 'items': missing or ['No major keyword gaps detected from this job post.']},
           {'heading': 'Placement guidance', 'items': [f'Use {form.get("target_role") or role["role"]} in the headline or summary when it is truthful.', 'Place the most important matched skills near the relevant achievement, not only in a keyword list.', 'Do not paste the job description into the resume.']},
       ],
-      'notice': 'ATS alignment is a visibility check. It does not replace readable writing or evidence of results.',
+      'notice': notice,
   }
 
 
@@ -791,20 +905,25 @@ def _linkedin_report(form):
   evidence = _evidence_text(form, 'skills', 'highlights')
   skills = _skill_list(evidence)
   skill_line = ', '.join(skills[:5]) or 'delivery, problem-solving, and stakeholder collaboration'
-  highlights = _content_lines(evidence)
+  evidence_lines = _evidence_lines(form)
+  target_alignment, _, _ = _positioning_target_fit(target, field, evidence, skills)
+  proof_score = _achievement_report(form)['score']
+  profile_completeness = round(100 * sum(bool(form.get(key)) for key in ('current_role', 'target_role', 'target_field', 'skills')) / 4)
+  score = round(0.4 * profile_completeness + 0.35 * proof_score + 0.25 * target_alignment)
+  target_phrase = target if target_alignment >= 60 else f'Exploring {target} opportunities'
   about = f'I am a {current} focused on {skill_line}. I am exploring {target} opportunities in {field}, where I can apply proven experience to meaningful business outcomes.'
-  if highlights:
-    about += f' Recent work includes: {highlights[0]}'
+  if evidence_lines:
+    about += f' Recent work includes: {evidence_lines[0]}'
   return {
-      'score': min(100, 45 + len(skills) * 9 + (15 if form.get('target_role') else 0)),
+      'score': score,
       'summary': 'Your LinkedIn profile should mirror the target direction while keeping the proof anchored in work you have actually done.',
       'metrics': [
-          {'label': 'Headline length', 'value': str(len(f'{current} | {target} | {skill_line}'))},
+          {'label': 'Headline length', 'value': str(len(f'{current} | {target_phrase} | {skill_line}'))},
           {'label': 'Skills to feature', 'value': str(min(5, len(skills)))},
-          {'label': 'Proof points', 'value': str(len(highlights))},
+          {'label': 'Proof points', 'value': str(min(5, len(evidence_lines)))},
       ],
       'sections': [
-          {'heading': 'Suggested headline', 'body': f'{current} | {target} | {skill_line}'[:220]},
+          {'heading': 'Suggested headline', 'body': f'{current} | {target_phrase} | {skill_line}'[:220]},
           {'heading': 'Suggested About section', 'body': about},
           {'heading': 'Profile actions', 'items': ['Add three Featured items that prove your target direction.', 'Ask for recommendations that describe outcomes and collaboration, not only personality.', 'Use the same target role language as the resume so recruiters see one coherent story.']},
       ],

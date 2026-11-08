@@ -195,6 +195,24 @@ def ensure_resume_analysis_schema(cursor):
         """
     )
 
+  cursor.execute(
+      """
+      SELECT column_name AS column_name
+      FROM information_schema.columns
+      WHERE table_schema = DATABASE()
+        AND table_name = 'resume_analysis'
+        AND column_name = 'analysis_json'
+      """
+  )
+  if not cursor.fetchone():
+    cursor.execute(
+        """
+        ALTER TABLE resume_analysis
+        ADD COLUMN analysis_json LONGTEXT NULL
+        AFTER resume_text
+        """
+    )
+
 
 def ensure_ai_management_schema(cursor):
   """Create AI telemetry and feature controls for admin operations."""
